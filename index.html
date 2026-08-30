@@ -4,61 +4,91 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Winter Arc</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2379D6FF' stroke-width='2'%3E%3Cpath d='M12 2v20M4.5 7l15 10M19.5 7l-15 10'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg-void: #05070A;
-    --ice-100: #EAF4FB;
-    --ice-400: #8FA4B8;
-    --muted: #6E8296;
-    --accent: #79D6FF;
-    --accent2: #5B8CFF;
-    --mint: #6EE7C6;
-    --amber: #F5B971;
-    --danger: #FF8A8A;
+    --line: rgba(255,255,255,0.09);
+    --ice-100: #EAF4FB; --ice-300: #9FB4C6; --ice-400: #8FA4B8; --muted: #6E8296;
+    --accent: #79D6FF; --accent2: #5B8CFF; --mint: #6EE7C6; --amber: #F5B971; --danger: #FF8A8A;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: var(--bg-void); }
-  body { font-family: 'Inter', sans-serif; color: var(--ice-100); }
-  #root { min-height: 100vh; position: relative; }
+  body { font-family: 'Instrument Sans', sans-serif; color: var(--ice-100); -webkit-font-smoothing: antialiased; }
+  h1,h2,h3 { font-family: 'Space Grotesk', sans-serif; }
+  button { font-family: inherit; }
+  input, textarea { font-family: 'Instrument Sans', sans-serif; }
+  input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   ::-webkit-scrollbar { width: 8px; height: 8px; }
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
-  input, textarea, button { font-family: 'Inter', sans-serif; }
-  input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button { font-family: inherit; }
+  input[type="range"] { accent-color: #79D6FF; width: 100%; }
 
-  @keyframes wa-fall { 0% { transform: translate(0, -5vh); } 100% { transform: translate(var(--drift), 105vh); } }
-  @keyframes wa-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-  @keyframes wa-popin { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-  @keyframes wa-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  @keyframes wa-fall { 0% { transform: translate(0,-5vh); } 100% { transform: translate(var(--drift), 105vh); } }
+  @keyframes wa-fadein { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+  @keyframes wa-popin { from { opacity:0; transform: scale(0.94) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+  @keyframes wa-burst { from { transform: translate(0,0) scale(1); opacity: var(--op,1); } to { transform: translate(var(--tx), var(--ty)) scale(0.25); opacity: 0; } }
+  @keyframes wa-title { 0% { opacity:0; transform: scale(0.82); } 18% { opacity:1; transform: scale(1); } 78% { opacity:1; } 100% { opacity:0; transform: scale(1.05); } }
+  @keyframes wa-blink { 0%,100% { opacity:1; } 50% { opacity:0.25; } }
+  @keyframes wa-pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 
   .wa-fadein { animation: wa-fadein 0.6s ease both; }
   .wa-stepfade { animation: wa-fadein 0.35s ease both; }
   .wa-overlay { animation: wa-fadein 0.25s ease both; }
   .wa-modalcard { animation: wa-popin 0.3s ease both; }
-
   .wa-btn { transition: transform .15s ease, filter .15s ease, background .15s ease; }
-  .wa-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
-  .wa-btn:active { transform: translateY(0) scale(0.98); }
+  .wa-btn:hover { filter: brightness(1.07); }
+  .wa-btn:active { transform: scale(0.98); }
 
-  .wa-hoverlift { transition: transform .2s ease; }
-  .wa-hoverlift:hover { transform: translateY(-3px); }
+  /* layout */
+  .wa-sidebar { position: fixed; left:0; top:0; bottom:0; width:236px; padding:22px 14px; display:flex; flex-direction:column; gap:3px;
+    background: rgba(8,12,18,0.75); backdrop-filter: blur(20px); border-right:1px solid rgba(255,255,255,0.06); z-index:20; }
+  .wa-main { margin-left:236px; padding:26px 34px 90px; position:relative; z-index:1; }
+  .wa-main-inner { max-width:1160px; margin:0 auto; }
+  .wa-mobilenav { position:fixed; bottom:0; left:0; right:0; display:none; justify-content:space-around; z-index:50;
+    background: rgba(6,9,14,0.94); backdrop-filter: blur(18px); border-top:1px solid rgba(255,255,255,0.08);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom)); }
+  .wa-mobilenav button { display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; color:#5C7082; font-size:10px; letter-spacing:0.4px; cursor:pointer; padding:6px 10px; border-radius:10px; }
+  .wa-mobilenav button.active { color:#8FE1FF; background: rgba(127,214,255,0.08); }
 
-  .wa-navbtn { transition: background .15s ease, color .15s ease; }
+  .wa-navitem { display:flex; align-items:center; gap:11px; padding:10px 13px; border-radius:12px; border:none; background:none;
+    color:var(--ice-400); font-size:13.5px; font-weight:500; cursor:pointer; text-align:left; transition: background .15s, color .15s; }
+  .wa-navitem:hover { background: rgba(255,255,255,0.05); color: var(--ice-100); }
+  .wa-navitem.active { background: rgba(127,214,255,0.10); color: #EAF4FB; box-shadow: inset 2px 0 0 #79D6FF; }
 
-  @media (max-width: 900px) {
-    .wa-sidebar { display: none !important; }
-    .wa-mobilenav { display: flex !important; }
-    .wa-dash-top, .wa-dash-grid, .wa-workout-grid, .wa-progress-grid, .wa-ach-grid, .wa-journal-grid, .wa-settings-grid, .wa-challenge-grid {
-      grid-template-columns: 1fr !important;
-    }
-    .wa-daylabel { display: block !important; }
-    .wa-hero-grid { grid-template-columns: 1fr !important; }
-    .wa-feature-grid { grid-template-columns: 1fr 1fr !important; }
-  }
-  @media (max-width: 560px) {
-    .wa-feature-grid { grid-template-columns: 1fr !important; }
+  /* grids */
+  .wa-hero-grid { display:grid; grid-template-columns:1.05fr 0.95fr; gap:50px; align-items:center; }
+  .wa-feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:18px; }
+  .wa-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .wa-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .wa-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+  /* chips & inputs */
+  .wa-chip { display:inline-flex; align-items:center; gap:8px; padding:11px 16px; border-radius:12px; cursor:pointer;
+    background: rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--ice-300); font-size:13.5px; font-weight:500;
+    transition: all .15s ease; }
+  .wa-chip:hover { border-color: rgba(143,225,255,0.4); }
+  .wa-chip.sel { background: rgba(127,214,255,0.12); border-color: rgba(127,214,255,0.55); color:#EAF4FB; }
+  .wa-chip.wide { width:100%; justify-content:flex-start; }
+  .wa-input { width:100%; padding:13px 15px; border-radius:12px; background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1); color:var(--ice-100); font-size:14.5px; outline:none; resize:vertical; }
+  .wa-input::placeholder { color:#5C7082; }
+
+  /* set dots */
+  .wa-setdot { width:36px; height:36px; border-radius:50%; border:1.5px solid rgba(255,255,255,0.2); background:rgba(255,255,255,0.04);
+    color:var(--ice-400); font-family:'JetBrains Mono',monospace; font-size:13px; cursor:pointer; display:inline-flex;
+    align-items:center; justify-content:center; transition: all .15s ease; }
+  .wa-setdot:hover { border-color: rgba(143,225,255,0.6); }
+  .wa-setdot.done { background:#7FD4FF; border-color:#8FE1FF; color:#04121F; font-weight:700; }
+
+  @media (max-width:1100px) { .wa-stats { grid-template-columns: repeat(2,1fr); } .wa-grid-3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width:900px) {
+    .wa-sidebar { display:none; }
+    .wa-mobilenav { display:flex; }
+    .wa-main { margin-left:0; padding:20px 16px 110px; }
+    .wa-hero-grid, .wa-feature-grid, .wa-grid-2, .wa-grid-3, .wa-stats { grid-template-columns: 1fr; }
   }
   @media (prefers-reduced-motion: reduce) {
     * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -73,11 +103,9 @@
 <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
 <script type="text/babel" data-presets="react">
-const { useState, useEffect, useMemo, useRef, useCallback, Fragment } = React;
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
 
-/* ============================================================================
-   ICONS — small hand-drawn stroke-icon set (feather/lucide-style), no deps
-============================================================================ */
+/* ============================== ICONS ============================== */
 const ICON_PATHS = {
   snowflake: (<g><line x1="12" y1="2" x2="12" y2="22"/><line x1="4.5" y1="7" x2="19.5" y2="17"/><line x1="19.5" y1="7" x2="4.5" y2="17"/><line x1="12" y1="2" x2="9" y2="5"/><line x1="12" y1="2" x2="15" y2="5"/><line x1="12" y1="22" x2="9" y2="19"/><line x1="12" y1="22" x2="15" y2="19"/></g>),
   flame: (<path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 3-6 5-11z"/>),
@@ -85,22 +113,16 @@ const ICON_PATHS = {
   moon: (<path d="M21 12.5A8.5 8.5 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5z"/>),
   dumbbell: (<g><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/><rect x="5" y="7" width="2" height="10" rx="1"/><rect x="17" y="7" width="2" height="10" rx="1"/></g>),
   target: (<g><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></g>),
-  calendar: (<g><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></g>),
   trophy: (<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4"/>),
   book: (<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5zM19 19a2 2 0 0 1-2 2H6"/>),
   settings: (<g><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></g>),
   "chevron-right": (<polyline points="9 18 15 12 9 6"/>),
   "chevron-left": (<polyline points="15 18 9 12 15 6"/>),
-  "chevron-down": (<polyline points="6 9 12 15 18 9"/>),
   check: (<polyline points="20 6 9 17 4 12"/>),
   x: (<g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>),
   plus: (<g><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>),
-  minus: (<line x1="5" y1="12" x2="19" y2="12"/>),
-  play: (<polygon points="6 3 20 12 6 21 6 3"/>),
   pause: (<g><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g>),
   "skip-forward": (<g><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></g>),
-  "rotate-ccw": (<g><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></g>),
-  menu: (<g><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></g>),
   home: (<path d="M3 11l9-8 9 8M5 10v10h14V10"/>),
   "trending-up": (<g><polyline points="3 17 9 11 13 15 21 6"/><polyline points="14 6 21 6 21 13"/></g>),
   sparkles: (<path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zM19 15l.9 2.6L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.4z"/>),
@@ -111,101 +133,63 @@ const ICON_PATHS = {
   "volume-x": (<g><polygon points="4 9 8 9 12 5 12 19 8 15 4 15 4 9"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></g>),
   download: (<g><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></g>),
   "alert-triangle": (<g><path d="M12 3l10 18H2L12 3z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>),
-  clipboard: (<g><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></g>),
   sunrise: (<g><line x1="12" y1="2" x2="12" y2="9"/><path d="M5.6 12a6.4 6.4 0 0 1 12.8 0"/><line x1="1" y1="18" x2="23" y2="18"/><line x1="1" y1="22" x2="23" y2="22"/><polyline points="8 6 12 2 16 6"/></g>),
   sun: (<g><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1" x2="12" y2="3.5"/><line x1="12" y1="20.5" x2="12" y2="23"/><line x1="3.5" y1="12" x2="1" y2="12"/><line x1="23" y1="12" x2="20.5" y2="12"/><line x1="5" y1="5" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19" y2="19"/><line x1="19" y1="5" x2="17.3" y2="6.7"/><line x1="6.7" y1="17.3" x2="5" y2="19"/></g>),
   sunset: (<g><line x1="12" y1="10" x2="12" y2="2"/><path d="M5.6 12a6.4 6.4 0 0 1 12.8 0"/><line x1="1" y1="18" x2="23" y2="18"/><line x1="1" y1="22" x2="23" y2="22"/><polyline points="16 6 12 10 8 6"/></g>),
-  star: (<polygon points="12 2 15 9 22 9.5 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.5 9 9 12 2"/>),
-  edit: (<g><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></g>),
   trash: (<g><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></g>),
   "check-circle": (<g><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></g>),
-  circle: (<circle cx="12" cy="12" r="9"/>),
-  "minus-circle": (<g><circle cx="12" cy="12" r="9"/><line x1="7.5" y1="12" x2="16.5" y2="12"/></g>),
   "arrow-right": (<g><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></g>),
-  info: (<g><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="7.5" x2="12" y2="7.51"/></g>),
+  play: (<polygon points="6 3 20 12 6 21 6 3"/>),
 };
-
 function Icon({ name, size = 16, color = "currentColor", style, strokeWidth = 2 }) {
   const d = ICON_PATHS[name];
+  if (!d) return null;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
-      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, ...style }}>
       {d}
     </svg>
   );
 }
 const mkIcon = (name) => (props) => <Icon name={name} {...props} />;
-const Snowflake = mkIcon("snowflake");
-const Flame = mkIcon("flame");
-const Droplets = mkIcon("droplets");
-const Moon = mkIcon("moon");
-const Dumbbell = mkIcon("dumbbell");
-const Target = mkIcon("target");
-const CalendarIcon = mkIcon("calendar");
-const Trophy = mkIcon("trophy");
-const BookOpen = mkIcon("book");
-const SettingsIcon = mkIcon("settings");
-const ChevronRight = mkIcon("chevron-right");
-const ChevronLeft = mkIcon("chevron-left");
-const ChevronDown = mkIcon("chevron-down");
-const Check = mkIcon("check");
-const X = mkIcon("x");
-const Plus = mkIcon("plus");
+const Snowflake = mkIcon("snowflake"); const Flame = mkIcon("flame"); const Droplets = mkIcon("droplets");
+const Moon = mkIcon("moon"); const Dumbbell = mkIcon("dumbbell"); const Target = mkIcon("target");
+const Trophy = mkIcon("trophy"); const BookOpen = mkIcon("book"); const SettingsIcon = mkIcon("settings");
+const ChevronLeft = mkIcon("chevron-left"); const Check = mkIcon("check"); const X = mkIcon("x");
+const Plus = mkIcon("plus"); const Pause = mkIcon("pause"); const SkipForward = mkIcon("skip-forward");
+const Home = mkIcon("home"); const TrendingUp = mkIcon("trending-up"); const Sparkles = mkIcon("sparkles");
+const Zap = mkIcon("zap"); const Lock = mkIcon("lock"); const Volume2 = mkIcon("volume-2");
+const VolumeX = mkIcon("volume-x"); const Download = mkIcon("download"); const AlertTriangle = mkIcon("alert-triangle");
+const Sunrise = mkIcon("sunrise"); const Sun = mkIcon("sun"); const Sunset = mkIcon("sunset");
+const Trash2 = mkIcon("trash"); const CheckCircle2 = mkIcon("check-circle"); const ArrowRight = mkIcon("arrow-right");
 const Play = mkIcon("play");
-const Pause = mkIcon("pause");
-const SkipForward = mkIcon("skip-forward");
-const RotateCcw = mkIcon("rotate-ccw");
-const Home = mkIcon("home");
-const TrendingUp = mkIcon("trending-up");
-const Sparkles = mkIcon("sparkles");
-const Zap = mkIcon("zap");
-const Trophy2 = Trophy;
-const Lock = mkIcon("lock");
-const Volume2 = mkIcon("volume-2");
-const VolumeX = mkIcon("volume-x");
-const Download = mkIcon("download");
-const AlertTriangle = mkIcon("alert-triangle");
-const Sunrise = mkIcon("sunrise");
-const Sun = mkIcon("sun");
-const Sunset = mkIcon("sunset");
-const Trash2 = mkIcon("trash");
-const CheckCircle2 = mkIcon("check-circle");
-const Circle = mkIcon("circle");
-const MinusCircle = mkIcon("minus-circle");
-const ArrowRight = mkIcon("arrow-right");
 
-/* ============================================================================
-   CONSTANTS
-============================================================================ */
-
+/* ============================== CONSTANTS ============================== */
 const ARC_LENGTH = 90;
-const STORAGE_KEY = "winterarc:state:v1";
+const STORAGE_KEY = "winterarc:state:v2";
+const XP_PER_LEVEL = 400;
+const RANKS = ["Frost Initiate", "Ice Apprentice", "Cold Forge", "Winter Guard", "Frost Warden", "Glacier Mind", "Winter Legend"];
 
 const GOAL_OPTIONS = [
   { id: "general", label: "General Fitness", icon: Dumbbell },
   { id: "strength", label: "Strength", icon: Flame },
   { id: "mobility", label: "Mobility", icon: Target },
-  { id: "basketball", label: "Basketball Performance", icon: Zap },
+  { id: "basketball", label: "Basketball", icon: Zap },
   { id: "running", label: "Running", icon: TrendingUp },
   { id: "calisthenics", label: "Calisthenics", icon: Trophy },
   { id: "routine", label: "Healthy Routine", icon: Sunrise },
   { id: "consistency", label: "Consistency", icon: Sparkles },
 ];
-
 const EQUIPMENT_OPTIONS = ["Bodyweight only", "Dumbbells", "Resistance bands", "Pull-up bar", "Full gym"];
 const EXPERIENCE_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
 const DAY_OPTIONS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const DURATION_OPTIONS = ["20 min", "30 min", "45 min", "60 min", "60+ min"];
 
 const DEFAULT_HABITS = [
-  { id: "workout", name: "Workout" },
-  { id: "water", name: "Drink water" },
-  { id: "sleep", name: "Sleep on time" },
-  { id: "stretch", name: "Stretch" },
-  { id: "read", name: "Read" },
-  { id: "study", name: "Study" },
-  { id: "screen", name: "Limit screen time" },
-  { id: "journal", name: "Journal" },
+  { id: "workout", name: "Workout" }, { id: "water", name: "Drink water" },
+  { id: "sleep", name: "Sleep on time" }, { id: "stretch", name: "Stretch" },
+  { id: "read", name: "Read" }, { id: "study", name: "Study" },
+  { id: "screen", name: "Limit screen time" }, { id: "journal", name: "Journal" },
   { id: "outdoor", name: "Outdoor activity" },
 ];
 
@@ -253,7 +237,7 @@ const WORKOUT_LIBRARY = {
     { name: "Defensive slides", sets: 3, reps: "30s", rest: 45 },
     { name: "Vertical jump reps", sets: 4, reps: "6", rest: 60 },
   ]},
-  "Conditioning": { difficulty: "Hard", duration: 25, muscles: "Cardiovascular", exercises: [
+  "Conditioning": { difficulty: "Hard", duration: 25, muscles: "Cardio", exercises: [
     { name: "Jumping jacks", sets: 4, reps: "40s", rest: 20 },
     { name: "High knees", sets: 4, reps: "30s", rest: 20 },
     { name: "Mountain climbers", sets: 4, reps: "30s", rest: 20 },
@@ -265,68 +249,74 @@ const WORKOUT_LIBRARY = {
     { name: "Foam rolling", sets: 1, reps: "5 min", rest: 0 },
   ]},
 };
+const DIFF_COLOR = { Easy: "#6EE7C6", Moderate: "#F5B971", Hard: "#FF8A8A" };
 
 const ACHIEVEMENT_DEFS = [
-  { id: "first_step", name: "FIRST STEP", desc: "Complete your first day.", check: (s) => s.totalActiveDays >= 1 },
-  { id: "seven_ice", name: "7-DAY ICE", desc: "Maintain a 7-day streak.", check: (s) => s.bestStreak >= 7 },
-  { id: "discipline_mode", name: "DISCIPLINE MODE", desc: "Complete 30 days.", check: (s) => s.totalActiveDays >= 30 },
-  { id: "unbreakable", name: "UNBREAKABLE", desc: "Maintain a 60-day streak.", check: (s) => s.bestStreak >= 60 },
-  { id: "winter_legend", name: "WINTER LEGEND", desc: "Complete the entire arc.", check: (s) => s.dayIndex >= ARC_LENGTH && s.totalActiveDays >= ARC_LENGTH },
+  { id: "first_step", name: "FIRST STEP", desc: "Complete your first active day.", check: (s) => s.activeDays >= 1 },
+  { id: "seven_ice", name: "7-DAY ICE", desc: "Reach a 7-day streak.", check: (s) => s.bestStreak >= 7 },
+  { id: "discipline_mode", name: "DISCIPLINE MODE", desc: "Log 30 active days.", check: (s) => s.activeDays >= 30 },
+  { id: "unbreakable", name: "UNBREAKABLE", desc: "Reach a 60-day streak.", check: (s) => s.bestStreak >= 60 },
+  { id: "winter_legend", name: "WINTER LEGEND", desc: "Complete the entire 90-day arc.", check: (s) => s.dayIndex >= ARC_LENGTH && s.activeDays >= ARC_LENGTH },
 ];
 
 const CHALLENGE_DEFS = [
-  { id: "consistency7", name: "7-Day Consistency", desc: "Log any activity 7 days in a row.", days: 7 },
-  { id: "mobility14", name: "14-Day Mobility", desc: "Do a mobility session every other day for 2 weeks.", days: 14 },
-  { id: "workout30", name: "30-Day Workout Consistency", desc: "Complete a workout at least every other day.", days: 30 },
-  { id: "reading30", name: "30-Day Reading", desc: "Read something every day for 30 days.", days: 30 },
-  { id: "hydration7", name: "Hydration Week", desc: "Hit your water goal every day this week.", days: 7 },
-  { id: "morning14", name: "Early Morning Routine", desc: "Log a wake time before 7am for 14 days.", days: 14 },
+  { id: "first_snow", name: "First Snow", desc: "Log your first active day.", target: 1, get: (s) => s.activeDays },
+  { id: "ice7", name: "7-Day Ice", desc: "Reach a 7-day streak.", target: 7, get: (s) => s.bestStreak },
+  { id: "hydrate7", name: "Hydration x7", desc: "Hit your water goal on 7 days.", target: 7, get: (s, st) => Object.values(st.days).filter((d) => d.water >= (st.profile?.waterGoal || 2500)).length },
+  { id: "sessions20", name: "20 Sessions", desc: "Complete 20 workouts.", target: 20, get: (s) => s.workouts },
+  { id: "rested14", name: "14 Rested Nights", desc: "Log sleep 14 times.", target: 14, get: (s, st) => Object.values(st.days).filter((d) => d.sleep && d.sleep.hours).length },
+  { id: "deep_winter", name: "Deep Winter", desc: "Log 30 active days.", target: 30, get: (s) => s.activeDays },
 ];
 
 const QUOTES = [
   "Show up.", "One day at a time.", "Discipline is built, not found.", "Your arc. Your pace.",
   "Small reps. Long arc.", "Consistency compounds.", "The work is the reward.",
 ];
+const MOODS = ["Rough", "Steady", "Good", "Great", "Peak"];
 
-/* ============================================================================
-   UTILITIES
-============================================================================ */
-
+/* ============================== UTILS ============================== */
 const pad = (n) => String(n).padStart(2, "0");
 const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const todayKey = () => dateKey(new Date());
 const addDays = (d, n) => { const nd = new Date(d); nd.setDate(nd.getDate() + n); return nd; };
-const startOfDay = (d) => { const nd = new Date(d); nd.setHours(0,0,0,0); return nd; };
+const startOfDay = (d) => { const nd = new Date(d); nd.setHours(0, 0, 0, 0); return nd; };
 const daysBetween = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / 86400000);
+const WEEKDAY_LETTER = ["S", "M", "T", "W", "T", "F", "S"];
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-function emptyDay() {
-  return { workoutDone: false, workoutCategory: null, habits: {}, water: 0, sleep: null, journal: null };
-}
+function emptyDay() { return { workoutDone: false, workoutCategory: null, habits: {}, water: 0, sleep: null, journal: null }; }
 
 function computeDayScore(day, profile) {
   if (!day) return 0;
   const workoutScore = day.workoutDone ? 25 : 0;
   const habitIds = (profile?.habits || []).map((h) => h.id);
   const total = habitIds.length || 1;
-  const checked = habitIds.filter((id) => day.habits?.[id]).length;
+  const checked = habitIds.filter((id) => day.habits && day.habits[id]).length;
   const habitsScore = habitIds.length ? Math.round((checked / total) * 25) : 0;
   const waterGoal = profile?.waterGoal || 2500;
   const waterScore = Math.min(20, Math.round((day.water / waterGoal) * 20));
   const sleepTarget = profile?.sleepTarget || 8;
-  const sleepScore = day.sleep?.hours ? Math.min(30, Math.round((day.sleep.hours / sleepTarget) * 30)) : 0;
+  const sleepScore = (day.sleep && day.sleep.hours) ? Math.min(30, Math.round((day.sleep.hours / sleepTarget) * 30)) : 0;
   return Math.min(100, workoutScore + habitsScore + waterScore + sleepScore);
 }
 
 function computeStreak(days, profile) {
-  let streak = 0;
-  let cursor = new Date();
-  while (true) {
-    const key = dateKey(cursor);
-    const score = computeDayScore(days[key], profile);
-    if (score > 0) { streak++; cursor = addDays(cursor, -1); }
-    else break;
-  }
+  let streak = 0, cursor = new Date();
+  if (computeDayScore(days[dateKey(cursor)], profile) === 0) cursor = addDays(cursor, -1);
+  while (computeDayScore(days[dateKey(cursor)], profile) > 0) { streak++; cursor = addDays(cursor, -1); }
   return streak;
+}
+
+function computeBestStreak(days, profile) {
+  const keys = Object.keys(days).filter((k) => computeDayScore(days[k], profile) > 0).sort();
+  let best = 0, cur = 0, prev = null;
+  keys.forEach((k) => {
+    const d = new Date(k + "T00:00:00");
+    if (prev && daysBetween(prev, d) === 1) cur++; else cur = 1;
+    if (cur > best) best = cur;
+    prev = d;
+  });
+  return best;
 }
 
 function xpFromState(days, profile) {
@@ -334,9 +324,9 @@ function xpFromState(days, profile) {
   Object.values(days).forEach((day) => {
     if (day.workoutDone) xp += 20;
     const habitIds = (profile?.habits || []).map((h) => h.id);
-    xp += habitIds.filter((id) => day.habits?.[id]).length * 5;
+    xp += habitIds.filter((id) => day.habits && day.habits[id]).length * 5;
     if (day.water >= (profile?.waterGoal || 2500)) xp += 10;
-    if (day.sleep?.hours) xp += 10;
+    if (day.sleep && day.sleep.hours) xp += 10;
   });
   return xp;
 }
@@ -349,33 +339,52 @@ function greetingForHour(h) {
   return { text: "Winding down.", Icon: Moon };
 }
 
-/* ============================================================================
-   ANIMATION HELPERS (vanilla, no framer-motion)
-============================================================================ */
+let _audioCtx = null;
+function beep(freq = 880, dur = 0.15, delay = 0) {
+  try {
+    _audioCtx = _audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (_audioCtx.state === "suspended") _audioCtx.resume();
+    const t = _audioCtx.currentTime + delay;
+    const o = _audioCtx.createOscillator(), g = _audioCtx.createGain();
+    o.connect(g); g.connect(_audioCtx.destination);
+    o.type = "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.18, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.05);
+  } catch (e) {}
+}
 
+function defaultState() {
+  return { version: 2, onboarded: false, profile: null, days: {}, achievements: {}, settings: { sound: true } };
+}
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) { const p = JSON.parse(raw); if (p && p.days && p.settings) return p; }
+  } catch (e) {}
+  return defaultState();
+}
+
+/* ============================== ANIMATION HOOKS ============================== */
 function useAnimatedNumber(target, duration = 900) {
   const [value, setValue] = useState(target);
   const fromRef = useRef(target);
-  const targetRef = useRef(target);
   useEffect(() => {
     fromRef.current = value;
-    targetRef.current = target;
-    let start = null;
-    let raf;
+    let start = null, raf;
     const step = (ts) => {
       if (!start) start = ts;
       const t = Math.min(1, (ts - start) / duration);
       const eased = 1 - Math.pow(1 - t, 3);
-      setValue(fromRef.current + (targetRef.current - fromRef.current) * eased);
+      setValue(fromRef.current + (target - fromRef.current) * eased);
       if (t < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line
   }, [target, duration]);
   return value;
 }
-
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
   useEffect(() => {
@@ -383,13 +392,12 @@ function useReducedMotion() {
       const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
       setReduced(mq.matches);
       const fn = (e) => setReduced(e.matches);
-      mq.addEventListener?.("change", fn);
-      return () => mq.removeEventListener?.("change", fn);
+      mq.addEventListener && mq.addEventListener("change", fn);
+      return () => mq.removeEventListener && mq.removeEventListener("change", fn);
     } catch (e) {}
   }, []);
   return reduced;
 }
-
 function useInView(options) {
   const ref = useRef(null);
   const [inView, setInView] = useState(false);
@@ -403,7 +411,6 @@ function useInView(options) {
   }, []);
   return [ref, inView];
 }
-
 function SectionReveal({ children, delay = 0 }) {
   const [ref, inView] = useInView();
   return (
@@ -411,30 +418,21 @@ function SectionReveal({ children, delay = 0 }) {
       opacity: inView ? 1 : 0,
       transform: inView ? "translateY(0)" : "translateY(28px)",
       transition: `opacity .7s ease ${delay}s, transform .7s ease ${delay}s`,
-    }}>
-      {children}
-    </div>
+    }}>{children}</div>
   );
 }
 
-/* ============================================================================
-   PRIMITIVE UI PIECES
-============================================================================ */
-
+/* ============================== PRIMITIVES ============================== */
 function SnowField({ count = 34 }) {
   const reduced = useReducedMotion();
   const flakes = useMemo(() => Array.from({ length: count }).map((_, i) => ({
-    id: i,
-    left: Math.random() * 100,
-    size: 2 + Math.random() * 3,
-    dur: 14 + Math.random() * 18,
-    delay: -(Math.random() * 20),
-    drift: (Math.random() - 0.5) * 60,
-    op: 0.15 + Math.random() * 0.35,
+    id: i, left: Math.random() * 100, size: 2 + Math.random() * 3,
+    dur: 14 + Math.random() * 18, delay: -(Math.random() * 20),
+    drift: (Math.random() - 0.5) * 60, op: 0.12 + Math.random() * 0.3,
   })), [count]);
   if (reduced) return null;
   return (
-    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+    <div aria-hidden="true" style={{ position: "fixed", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
       {flakes.map((f) => (
         <span key={f.id} style={{
           position: "absolute", top: -10, left: `${f.left}%`, width: f.size, height: f.size,
@@ -446,14 +444,12 @@ function SnowField({ count = 34 }) {
   );
 }
 
-function Glass({ children, className = "", style = {}, as: As = "div", ...rest }) {
+function Glass({ children, style = {}, ...rest }) {
   return (
-    <As className={className} style={{
+    <div style={{
       background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)",
       backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRadius: 20, ...style,
-    }} {...rest}>
-      {children}
-    </As>
+    }} {...rest}>{children}</div>
   );
 }
 
@@ -463,30 +459,25 @@ function ArcRing({ percent = 0, size = 160, stroke = 10, label, sublabel, accent
   const c = 2 * Math.PI * r;
   const gapFraction = 0.22;
   const usable = c * (1 - gapFraction);
-  const offset = usable - (usable * Math.min(100, Math.max(0, animated))) / 100;
+  const offset = usable - (usable * clamp(animated, 0, 100)) / 100;
   const rot = 90 + (360 * gapFraction) / 2;
   return (
     <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <defs>
           <linearGradient id={`grad-${accentId}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#79D6FF" />
-            <stop offset="100%" stopColor="#5B8CFF" />
+            <stop offset="0%" stopColor="#8FE1FF" /><stop offset="100%" stopColor="#5B8CFF" />
           </linearGradient>
-          <filter id={`glow-${accentId}`}>
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-          </filter>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke}
           strokeDasharray={`${usable} ${c}`} strokeLinecap="round" transform={`rotate(${rot} ${size / 2} ${size / 2})`} />
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#grad-${accentId})`} strokeWidth={stroke}
           strokeDasharray={`${usable} ${c}`} strokeDashoffset={offset} strokeLinecap="round"
-          filter={`url(#glow-${accentId})`} transform={`rotate(${rot} ${size / 2} ${size / 2})`} />
+          transform={`rotate(${rot} ${size / 2} ${size / 2})`} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
-        {label && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: size * 0.16, color: "#F2F8FC", lineHeight: 1 }}>{label}</div>}
-        {sublabel && <div style={{ fontSize: 11, color: "#7E97AC", marginTop: 4, letterSpacing: 1 }}>{sublabel}</div>}
+        {label && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: size * 0.17, color: "#F2F8FC", lineHeight: 1 }}>{label}</div>}
+        {sublabel && <div style={{ fontSize: 10, color: "#7E97AC", marginTop: 5, letterSpacing: 1.5 }}>{sublabel}</div>}
       </div>
     </div>
   );
@@ -497,31 +488,40 @@ function CountUp({ value, format = (v) => Math.round(v) }) {
   return <>{format(animated)}</>;
 }
 
-function Button({ children, variant = "primary", size = "md", className = "", icon: Icon, style: styleOverride, ...rest }) {
+function Button({ children, variant = "primary", size = "md", className = "", icon: IconC, style: styleOverride, ...rest }) {
   const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
     fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, letterSpacing: 0.4,
     borderRadius: 12, cursor: "pointer", border: "1px solid transparent", whiteSpace: "nowrap" };
   const sizes = { sm: { padding: "8px 14px", fontSize: 12.5 }, md: { padding: "12px 22px", fontSize: 14 }, lg: { padding: "16px 30px", fontSize: 15.5 } };
   const variants = {
-    primary: { background: "linear-gradient(135deg, #7FD8FF, #5B8CFF)", color: "#04121F", boxShadow: "0 0 0 1px rgba(127,216,255,0.25), 0 8px 24px -8px rgba(91,140,255,0.55)" },
+    primary: { background: "#7FD4FF", color: "#04121F", boxShadow: "0 8px 24px -10px rgba(127,212,255,0.5)" },
     secondary: { background: "rgba(255,255,255,0.06)", color: "#EAF4FB", border: "1px solid rgba(255,255,255,0.14)" },
     ghost: { background: "transparent", color: "#9FB4C6" },
     danger: { background: "rgba(255,90,90,0.12)", color: "#FF8A8A", border: "1px solid rgba(255,90,90,0.3)" },
   };
   return (
     <button className={`wa-btn ${className}`} style={{ ...base, ...sizes[size], ...variants[variant], ...styleOverride }} {...rest}>
-      {Icon && <Icon size={size === "lg" ? 18 : 15} />}
-      {children}
+      {IconC && <IconC size={size === "lg" ? 18 : 15} />}{children}
     </button>
   );
 }
 
 function ProgressBar({ percent, color = "linear-gradient(90deg,#79D6FF,#5B8CFF)", height = 8 }) {
-  const animated = useAnimatedNumber(percent, 900);
+  const animated = useAnimatedNumber(clamp(percent, 0, 100), 900);
   return (
     <div style={{ height, borderRadius: height, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-      <div style={{ height: "100%", width: `${Math.min(100, Math.max(0, animated))}%`, background: color, borderRadius: height }} />
+      <div style={{ height: "100%", width: `${animated}%`, background: color, borderRadius: height, transition: "width .3s" }} />
     </div>
+  );
+}
+
+function Chip({ label, selected, onClick, icon: IconC, wide, compact }) {
+  return (
+    <button type="button" className={`wa-chip ${selected ? "sel" : ""} ${wide ? "wide" : ""}`}
+      onClick={onClick} style={compact ? { padding: "9px 13px", fontSize: 12.5 } : null}>
+      {IconC && <IconC size={14} />}{label}
+      {selected && <Check size={13} color="#8FE1FF" />}
+    </button>
   );
 }
 
@@ -530,9 +530,9 @@ function ConfirmDialog({ open, title, body, confirmLabel = "Confirm", danger, on
   return (
     <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onCancel}>
       <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
-        <Glass style={{ padding: 28, width: 380, maxWidth: "90vw" }}>
+        <Glass style={{ padding: 28, width: 390, maxWidth: "90vw" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-            {danger && <AlertTriangle size={20} color="#FF8A8A" style={{ marginTop: 2, flexShrink: 0 }} />}
+            {danger && <AlertTriangle size={20} color="#FF8A8A" style={{ marginTop: 2 }} />}
             <div>
               <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{title}</div>
               <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8, lineHeight: 1.5 }}>{body}</div>
@@ -551,69 +551,260 @@ function ConfirmDialog({ open, title, body, confirmLabel = "Confirm", danger, on
 function Toast({ toast }) {
   if (!toast) return null;
   return (
-    <div className="wa-modalcard" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 300 }}>
+    <div className="wa-modalcard" style={{ position: "fixed", bottom: 90, left: "50%", transform: "translateX(-50%)", zIndex: 300 }}>
       <Glass style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRadius: 999, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.6)" }}>
         <CheckCircle2 size={16} color="#6EE7C6" />
-        <span style={{ fontSize: 13.5, color: "#EAF4FB" }}>{toast}</span>
+        <span style={{ fontSize: 13.5, color: "#EAF4FB" }}>{toast.msg}</span>
       </Glass>
     </div>
   );
 }
 
-/* ============================================================================
-   MINI CHARTS (custom SVG, no chart library)
-============================================================================ */
-
-function MiniAreaChart({ data, dataKey, color = "#79D6FF", height = 220 }) {
-  const w = 600;
-  const max = Math.max(1, ...data.map((d) => d[dataKey]));
-  const n = Math.max(1, data.length - 1);
-  const stepX = w / n;
-  const pts = data.map((d, i) => [i * stepX, height - 20 - (d[dataKey] / max) * (height - 40)]);
-  const line = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
-  const area = `${line} L ${pts[pts.length - 1][0].toFixed(1)},${height - 20} L 0,${height - 20} Z`;
-  const gid = "grad_" + dataKey;
+function SnowBurst({ title, onDone }) {
+  useEffect(() => { const t = setTimeout(onDone, title ? 2200 : 1400); return () => clearTimeout(t); }, []);
+  const reduced = useReducedMotion();
+  const parts = useMemo(() => Array.from({ length: 64 }).map(() => {
+    const ang = Math.random() * Math.PI * 2;
+    const dist = 130 + Math.random() * 330;
+    return { tx: Math.cos(ang) * dist, ty: Math.sin(ang) * dist + 90, size: 3 + Math.random() * 5, delay: Math.random() * 0.15, op: 0.5 + Math.random() * 0.5 };
+  }), []);
   return (
-    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.5" />
-          <stop offset="100%" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {[0, 1, 2, 3].map((i) => (
-        <line key={i} x1="0" x2={w} y1={20 + (i * (height - 40)) / 3} y2={20 + (i * (height - 40)) / 3} stroke="rgba(255,255,255,0.06)" />
+    <div style={{ position: "fixed", inset: 0, zIndex: 400, pointerEvents: "none", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      {!reduced && parts.map((p, i) => (
+        <span key={i} style={{
+          position: "absolute", width: p.size, height: p.size, borderRadius: "50%", background: "#CFEBFF",
+          "--tx": p.tx + "px", "--ty": p.ty + "px", "--op": p.op,
+          animation: `wa-burst 1.1s cubic-bezier(.2,.6,.3,1) ${p.delay}s forwards`,
+        }} />
       ))}
-      <path d={area} fill={`url(#${gid})`} />
-      <path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+      {title && (
+        <div style={{ textAlign: "center", animation: "wa-title 2.1s ease forwards" }}>
+          <Snowflake size={30} color="#8FE1FF" style={{ margin: "0 auto 14px" }} />
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: "clamp(30px,6vw,52px)", letterSpacing: 6, color: "#F2F8FC" }}>{title}</div>
+        </div>
+      )}
+    </div>
   );
 }
 
-function MiniBarChart({ data, dataKey, color = "#5B8CFF", height = 180 }) {
-  const w = 600;
-  const max = Math.max(1, ...data.map((d) => d[dataKey]));
-  const gap = w / data.length;
-  const bw = gap * 0.55;
+function StatChip({ icon: I, children, color }) {
   return (
-    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
-      {[0, 1, 2].map((i) => (<line key={i} x1="0" x2={w} y1={10 + (i * (height - 30)) / 2} y2={10 + (i * (height - 30)) / 2} stroke="rgba(255,255,255,0.06)" />))}
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 7, padding: "7px 13px", borderRadius: 999, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", fontSize: 12.5, color: "#9FB4C6" }}>
+      <I size={13} color={color || "currentColor"} />{children}
+    </div>
+  );
+}
+
+function PageHead({ eyebrow, title, sub }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      {eyebrow && <div style={{ fontSize: 11, letterSpacing: 2, color: "#6E8296", marginBottom: 6 }}>{eyebrow}</div>}
+      <h2 style={{ fontWeight: 700, fontSize: 25, color: "#F2F8FC", margin: 0 }}>{title}</h2>
+      {sub && <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 6 }}>{sub}</div>}
+    </div>
+  );
+}
+
+function Switch({ on, onToggle }) {
+  return (
+    <button onClick={onToggle} aria-label="toggle" style={{ width: 46, height: 26, borderRadius: 99, background: on ? "rgba(127,212,255,0.9)" : "rgba(255,255,255,0.12)", border: "none", position: "relative", cursor: "pointer", transition: "background .2s", flexShrink: 0 }}>
+      <span style={{ position: "absolute", top: 3, left: on ? 23 : 3, width: 20, height: 20, borderRadius: "50%", background: on ? "#04121F" : "#9FB4C6", transition: "left .2s" }} />
+    </button>
+  );
+}
+
+function MiniStat({ icon: IconC, label, value, accent = "#79D6FF" }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
+      <div style={{ width: 32, height: 32, borderRadius: 10, background: "rgba(127,216,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <IconC size={14} color={accent} />
+      </div>
+      <div>
+        <div style={{ fontSize: 10.5, color: "#6E8296", letterSpacing: 0.5 }}>{label}</div>
+        <div style={{ fontSize: 13.5, color: "#EAF4FB", fontWeight: 600 }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== CHARTS ============================== */
+function ScoreAreaChart({ data, height = 230 }) {
+  const [hi, setHi] = useState(null);
+  const w = 620, h = height, padT = 18, padB = 24, plotH = h - padT - padB;
+  const stepX = data.length > 1 ? w / (data.length - 1) : w;
+  const yOf = (v) => padT + plotH - (v / 100) * plotH;
+  const pts = data.map((d, i) => [i * stepX, yOf(d.value)]);
+  const line = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+  const area = line + ` L ${w} ${padT + plotH} L 0 ${padT + plotH} Z`;
+  const gid = useMemo(() => "ag" + Math.random().toString(36).slice(2, 8), []);
+  const onMove = (e) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * w;
+    setHi(clamp(Math.round(x / stepX), 0, data.length - 1));
+  };
+  const hp = hi != null ? pts[hi] : null;
+  const avg = data.length ? Math.round(data.reduce((a, d) => a + d.value, 0) / data.length) : 0;
+  return (
+    <div style={{ position: "relative" }}>
+      <div style={{ position: "absolute", top: 0, right: 2, fontSize: 11, color: "#6E8296", fontFamily: "'JetBrains Mono',monospace" }}>AVG {avg}</div>
+      <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none"
+        onMouseMove={onMove} onMouseLeave={() => setHi(null)} style={{ display: "block", cursor: "crosshair", marginTop: 6 }}>
+        <defs>
+          <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#79D6FF" stopOpacity="0.4" /><stop offset="100%" stopColor="#79D6FF" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        {[0, 25, 50, 75, 100].map((v) => (
+          <line key={v} x1="0" x2={w} y1={yOf(v)} y2={yOf(v)} stroke="rgba(255,255,255,0.05)" />
+        ))}
+        <path d={area} fill={`url(#${gid})`} />
+        <path d={line} fill="none" stroke="#79D6FF" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        {hp && (
+          <g>
+            <line x1={hp[0]} y1={padT - 8} x2={hp[0]} y2={padT + plotH} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 4" />
+            <circle cx={hp[0]} cy={hp[1]} r="4.5" fill="#0A121C" stroke="#8FE1FF" strokeWidth="2.5" />
+          </g>
+        )}
+      </svg>
+      {hp && (
+        <div style={{
+          position: "absolute", top: 0, left: `${clamp((pts[hi][0] / w) * 100, 8, 92)}%`, transform: "translateX(-50%)",
+          background: "rgba(10,18,28,0.92)", border: "1px solid rgba(143,225,255,0.35)", borderRadius: 8,
+          padding: "4px 10px", fontSize: 11.5, color: "#EAF4FB", fontFamily: "'JetBrains Mono',monospace", pointerEvents: "none", whiteSpace: "nowrap",
+        }}>{data[hi].label} · {Math.round(data[hi].value)}%</div>
+      )}
+    </div>
+  );
+}
+
+function WaterBarChart({ data, goal }) {
+  const w = 620, h = 170, padB = 22, padT = 10;
+  const max = Math.max(goal * 1.15, ...data.map((d) => d.value), 1);
+  const yOf = (v) => padT + (h - padT - padB) - (v / max) * (h - padT - padB);
+  const gap = w / data.length, bw = gap * 0.55;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height={h} preserveAspectRatio="none" style={{ display: "block" }}>
+      <line x1="0" x2={w} y1={yOf(goal)} y2={yOf(goal)} stroke="#6EE7C6" strokeWidth="1.5" strokeDasharray="5 5" opacity="0.7" />
       {data.map((d, i) => {
-        const bh = Math.max(2, (d[dataKey] / max) * (height - 30));
-        return <rect key={i} x={i * gap + (gap - bw) / 2} y={height - 20 - bh} width={bw} height={bh} rx={3} fill={color} opacity="0.9" />;
+        const bh = Math.max(2, ((h - padT - padB) * d.value) / max);
+        return (
+          <rect key={i} x={i * gap + (gap - bw) / 2} y={h - padB - bh} width={bw} height={bh} rx={4}
+            fill={d.value >= goal ? "#6EE7C6" : "#5B8CFF"} opacity={d.value >= goal ? 0.95 : 0.75} />
+        );
       })}
     </svg>
   );
 }
 
-/* ============================================================================
-   LANDING PAGE
-============================================================================ */
+function Heatmap({ days, profile, startDate, dayIndex }) {
+  const start = new Date(startDate + "T00:00:00");
+  const cells = Array.from({ length: ARC_LENGTH }).map((_, i) => {
+    const d = addDays(start, i), k = dateKey(d);
+    const score = computeDayScore(days[k], profile);
+    const future = i + 1 > dayIndex;
+    return { k, score, future, day: i + 1 };
+  });
+  const colorFor = (c) => {
+    if (c.future) return "transparent";
+    if (c.score >= 100) return "#8FE1FF";
+    if (c.score >= 70) return "rgba(127,214,255,0.75)";
+    if (c.score >= 40) return "rgba(127,214,255,0.42)";
+    if (c.score > 0) return "rgba(127,214,255,0.18)";
+    return "rgba(255,255,255,0.05)";
+  };
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(15, 1fr)", gap: 5 }}>
+        {cells.map((c) => (
+          <div key={c.k} title={c.future ? `Day ${c.day}` : `Day ${c.day} — ${c.k} — score ${c.score}`}
+            style={{
+              aspectRatio: "1", borderRadius: 6, background: colorFor(c),
+              border: c.day === dayIndex ? "1.5px solid #8FE1FF" : c.future ? "1px solid rgba(255,255,255,0.06)" : "none",
+              boxShadow: c.score >= 100 ? "0 0 8px rgba(143,225,255,0.5)" : "none",
+            }} />
+        ))}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, fontSize: 10.5, color: "#6E8296" }}>
+        <span>LESS</span>
+        {["rgba(255,255,255,0.05)", "rgba(127,214,255,0.18)", "rgba(127,214,255,0.42)", "rgba(127,214,255,0.75)", "#8FE1FF"].map((c) => (
+          <span key={c} style={{ width: 11, height: 11, borderRadius: 3, background: c, display: "inline-block" }} />
+        ))}
+        <span>MORE</span>
+      </div>
+    </div>
+  );
+}
 
+/* ============================== WATER BOTTLE ============================== */
+function WaterBottle({ percent, id }) {
+  const p = clamp(percent, 0, 100) / 100;
+  const bodyY = 30, bodyH = 114;
+  return (
+    <svg width="86" height="152" viewBox="0 0 90 152" style={{ flexShrink: 0 }}>
+      <defs><clipPath id={`bclip-${id}`}><rect x="15" y={bodyY} width="60" height={bodyH} rx="16" /></clipPath></defs>
+      <g clipPath={`url(#bclip-${id})`}>
+        <rect x="15" y={bodyY + bodyH * (1 - p)} width="60" height={bodyH * p} fill="#3FA9E8" opacity="0.8"
+          style={{ transition: "all .6s cubic-bezier(.4,0,.2,1)" }} />
+        <rect x="15" y={bodyY + bodyH * (1 - p)} width="60" height="3" fill="#BFEAFF" style={{ transition: "all .6s cubic-bezier(.4,0,.2,1)" }} />
+      </g>
+      {[0.25, 0.5, 0.75].map((t) => (
+        <line key={t} x1="15" x2="25" y1={bodyY + bodyH * t} y2={bodyY + bodyH * t} stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" />
+      ))}
+      <rect x="15" y={bodyY} width="60" height={bodyH} rx="16" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+      <rect x="33" y="12" width="24" height="20" rx="4" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="2" />
+      <rect x="30" y="4" width="30" height="10" rx="3" fill="rgba(127,214,255,0.25)" stroke="rgba(143,225,255,0.5)" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+/* ============================== REST TIMER ============================== */
+function RestTimer({ seconds, soundOn, onEnd, onClose }) {
+  const [left, setLeft] = useState(seconds);
+  const [paused, setPaused] = useState(false);
+  useEffect(() => {
+    if (paused || left <= 0) return;
+    const t = setTimeout(() => setLeft((l) => l - 1), 1000);
+    return () => clearTimeout(t);
+  }, [paused, left]);
+  useEffect(() => {
+    if (left <= 0 && !paused) {
+      if (soundOn) { beep(880, 0.18); beep(1175, 0.22, 0.18); }
+      const t = setTimeout(onEnd, 600);
+      return () => clearTimeout(t);
+    }
+  }, [left, paused]);
+  const frac = clamp(left / seconds, 0, 1);
+  const r = 30, c = 2 * Math.PI * r;
+  const mm = Math.floor(left / 60), ss = left % 60;
+  return (
+    <Glass style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 16, borderRadius: 16, animation: "wa-popin .25s ease both" }}>
+      <div style={{ position: "relative", width: 76, height: 76, flexShrink: 0, animation: "wa-pulse 1.6s ease-in-out infinite" }}>
+        <svg width="76" height="76" viewBox="0 0 76 76">
+          <circle cx="38" cy="38" r={r} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
+          <circle cx="38" cy="38" r={r} fill="none" stroke="#8FE1FF" strokeWidth="6" strokeLinecap="round"
+            strokeDasharray={c} strokeDashoffset={c * (1 - frac)} transform="rotate(-90 38 38)" style={{ transition: "stroke-dashoffset 1s linear" }} />
+        </svg>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 14.5, color: "#F2F8FC" }}>
+          {mm > 0 ? `${mm}:${pad(ss)}` : left}
+        </div>
+      </div>
+      <div style={{ flex: 1 }}>
+        <div style={{ fontSize: 10.5, letterSpacing: 2, color: "#6E8296" }}>REST</div>
+        <div style={{ fontSize: 14, color: "#EAF4FB", fontWeight: 600, marginTop: 2 }}>Breathe. Next set incoming.</div>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        <Button size="sm" variant="secondary" icon={paused ? Play : Pause} onClick={() => setPaused(!paused)}>{paused ? "Resume" : "Pause"}</Button>
+        <Button size="sm" variant="ghost" icon={SkipForward} onClick={onClose}>Skip</Button>
+      </div>
+    </Glass>
+  );
+}
+
+/* ============================== LANDING ============================== */
 function Landing({ onStart, onExplore, exploreRef }) {
   const [greet] = useState(() => greetingForHour(new Date().getHours()));
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", minHeight: "100vh" }}>
       <SnowField count={46} />
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 0" }}>
@@ -624,13 +815,14 @@ function Landing({ onStart, onExplore, exploreRef }) {
           <Button variant="secondary" size="sm" onClick={onStart}>Sign In</Button>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 50, alignItems: "center", paddingTop: 56, paddingBottom: 60 }} className="wa-hero-grid">
+        <div className="wa-hero-grid" style={{ paddingTop: 46, paddingBottom: 60 }}>
           <div className="wa-fadein">
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(127,216,255,0.25)", background: "rgba(127,216,255,0.06)", fontSize: 12, color: "#8FD4FF", marginBottom: 26, letterSpacing: 0.5 }}>
               <greet.Icon size={13} /> {greet.text}
             </div>
-            <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: "clamp(40px, 5.4vw, 68px)", lineHeight: 1.02, letterSpacing: -1, color: "#F5FAFD", margin: 0 }}>
-              ENTER YOUR<br /><span style={{ background: "linear-gradient(135deg,#8FE1FF,#5B8CFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>WINTER ARC.</span>
+            <h1 style={{ fontWeight: 700, fontSize: "clamp(40px, 5.4vw, 68px)", lineHeight: 1.02, letterSpacing: -1, color: "#F5FAFD", margin: 0 }}>
+              ENTER YOUR<br />
+              <span style={{ background: "linear-gradient(135deg,#8FE1FF,#5B8CFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>WINTER ARC.</span>
             </h1>
             <p style={{ fontSize: 17, color: "#93A8BB", marginTop: 22, maxWidth: 460, lineHeight: 1.6 }}>
               Build discipline. Track consistency. Become stronger — one day at a time.
@@ -652,15 +844,15 @@ function Landing({ onStart, onExplore, exploreRef }) {
           <div className="wa-fadein" style={{ animationDelay: ".15s" }}>
             <Glass style={{ padding: 24, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.7)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-                <div style={{ fontSize: 11, letterSpacing: 1.5, color: "#6E8296", textTransform: "uppercase" }}>Live Preview</div>
+                <div style={{ fontSize: 11, letterSpacing: 1.5, color: "#6E8296" }}>LIVE PREVIEW</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#6EE7C6" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6EE7C6", display: "inline-block" }} /> Streak active
+                  <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6EE7C6", display: "inline-block", animation: "wa-blink 2s infinite" }} /> Streak active
                 </div>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
-                <ArcRing percent={20} size={128} stroke={9} label="18/90" sublabel="ARC DAY" accentId="hero" />
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
-                  <MiniStat icon={Flame} label="Streak" value="12 days" />
+              <div style={{ display: "flex", alignItems: "center", gap: 22, flexWrap: "wrap" }}>
+                <ArcRing percent={62} size={128} stroke={9} label="56/90" sublabel="ARC DAY" accentId="hero" />
+                <div style={{ flex: 1, minWidth: 150, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <MiniStat icon={Flame} label="Streak" value="12 days" accent="#F5B971" />
                   <MiniStat icon={Droplets} label="Hydration" value="1.8 / 2.5L" />
                   <MiniStat icon={Moon} label="Sleep" value="7h 40m" />
                 </div>
@@ -679,18 +871,18 @@ function Landing({ onStart, onExplore, exploreRef }) {
           </div>
         </div>
 
-        <div ref={exploreRef} style={{ paddingTop: 60, paddingBottom: 30 }}>
+        <div ref={exploreRef} style={{ paddingTop: 50, paddingBottom: 30 }}>
           <SectionReveal>
             <div style={{ fontSize: 12, letterSpacing: 2, color: "#6E8296", textAlign: "center", marginBottom: 10 }}>THE SYSTEM</div>
-            <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(26px,3vw,36px)", textAlign: "center", color: "#F2F8FC", margin: "0 0 46px" }}>Everything your arc needs.</h2>
+            <h2 style={{ fontSize: "clamp(26px,3vw,36px)", textAlign: "center", color: "#F2F8FC", margin: "0 0 46px" }}>Everything your arc needs.</h2>
           </SectionReveal>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }} className="wa-feature-grid">
+          <div className="wa-feature-grid">
             {[
-              { icon: Dumbbell, title: "Structured Workouts", desc: "Nine training categories, real sets and reps, an interactive session mode with rest timers." },
-              { icon: Target, title: "Habit Tracking", desc: "Daily checklist, weekly heatmap, streaks — build the routine, not just the workout." },
-              { icon: Droplets, title: "Hydration & Sleep", desc: "Configurable targets. An animated bottle. A sleep graph that values consistency over judgment." },
-              { icon: TrendingUp, title: "Progress Analytics", desc: "Weekly, monthly, and full-arc views of every metric that matters." },
-              { icon: Trophy, title: "Achievements & XP", desc: "Earn discipline XP and unlock milestones — without punishing a missed day." },
+              { icon: Dumbbell, title: "Structured Workouts", desc: "Nine training categories with real sets and reps, plus an interactive session mode with rest timers and audio cues." },
+              { icon: Target, title: "Habit Tracking", desc: "Daily checklist, 90-day heatmap, streaks — build the routine, not just the workout." },
+              { icon: Droplets, title: "Hydration & Sleep", desc: "An animated bottle, configurable targets, and a sleep log that values consistency over judgment." },
+              { icon: TrendingUp, title: "Progress Analytics", desc: "Interactive charts of every metric that matters — hover any day for details." },
+              { icon: Trophy, title: "Achievements & XP", desc: "Earn discipline XP, climb ranks from Frost Initiate to Winter Legend." },
               { icon: BookOpen, title: "Journal", desc: "A minimalist daily reflection. Mood, energy, what worked, what's next." },
             ].map((f, i) => (
               <SectionReveal delay={i * 0.05} key={f.title}>
@@ -717,32 +909,27 @@ function Landing({ onStart, onExplore, exploreRef }) {
           <Button size="lg" onClick={onStart} icon={Snowflake}>START YOUR ARC</Button>
         </div>
 
-        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "22px 0", display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "#5C7082" }}>
-          <span>WINTER ARC</span>
-          <span>Built for consistency, not comparison.</span>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "22px 0", display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "#5C7082", flexWrap: "wrap", gap: 8 }}>
+          <span>WINTER ARC</span><span>Built for consistency, not comparison.</span>
         </div>
       </div>
     </div>
   );
 }
 
-function MiniStat({ icon: Icon, label, value }) {
+/* ============================== ONBOARDING ============================== */
+const qh = { fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: "#F2F8FC", margin: "0 0 8px" };
+const qsub = { fontSize: 13.5, color: "#8FA4B8", margin: "0 0 22px" };
+const qlabel = { fontSize: 12.5, color: "#9FB4C6", marginBottom: 10 };
+
+function ReviewRow({ label, value, last }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      <div style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(127,216,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-        <Icon size={14} color="#79D6FF" />
-      </div>
-      <div>
-        <div style={{ fontSize: 10.5, color: "#6E8296" }}>{label}</div>
-        <div style={{ fontSize: 13, color: "#EAF4FB", fontWeight: 600 }}>{value}</div>
-      </div>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 14, padding: "9px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+      <span style={{ fontSize: 12.5, color: "#6E8296" }}>{label}</span>
+      <span style={{ fontSize: 12.5, color: "#EAF4FB", textAlign: "right", fontWeight: 500 }}>{value || "—"}</span>
     </div>
   );
 }
-
-/* ============================================================================
-   ONBOARDING
-============================================================================ */
 
 function Onboarding({ onComplete, onCancel }) {
   const [step, setStep] = useState(0);
@@ -750,7 +937,6 @@ function Onboarding({ onComplete, onCancel }) {
     name: "", age: "", experience: "Beginner", goals: [], trainingDays: [], duration: "30 min",
     equipment: [], sleepTarget: 8, waterGoal: 2500, habits: DEFAULT_HABITS.map((h) => h.id),
   });
-
   const steps = ["Name", "Experience", "Goals", "Schedule", "Equipment", "Targets", "Habits", "Review"];
   const toggle = (key, val) => setForm((f) => ({ ...f, [key]: f[key].includes(val) ? f[key].filter((x) => x !== val) : [...f[key], val] }));
   const canNext = () => {
@@ -760,7 +946,6 @@ function Onboarding({ onComplete, onCancel }) {
     if (step === 4) return form.equipment.length > 0;
     return true;
   };
-
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#05070A", overflow: "auto" }}>
       <SnowField count={20} />
@@ -770,7 +955,7 @@ function Onboarding({ onComplete, onCancel }) {
             <Snowflake size={17} color="#79D6FF" />
             <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2.5, fontSize: 12.5, color: "#EAF4FB" }}>WINTER ARC</span>
           </div>
-          <button onClick={onCancel} style={{ background: "none", border: "none", color: "#5C7082", cursor: "pointer" }}><X size={18} /></button>
+          <button onClick={onCancel} aria-label="close" style={{ background: "none", border: "none", color: "#5C7082", cursor: "pointer" }}><X size={18} /></button>
         </div>
 
         <div style={{ display: "flex", gap: 6, marginBottom: 40 }}>
@@ -785,9 +970,9 @@ function Onboarding({ onComplete, onCancel }) {
           {step === 0 && (
             <div>
               <h2 style={qh}>What should we call you?</h2>
-              <input placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={qinput} />
+              <input className="wa-input" placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
               <div style={{ height: 14 }} />
-              <input placeholder="Age" type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} style={qinput} />
+              <input className="wa-input" placeholder="Age" type="number" min="10" max="99" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} />
             </div>
           )}
           {step === 1 && (
@@ -841,13 +1026,13 @@ function Onboarding({ onComplete, onCancel }) {
             <div>
               <h2 style={qh}>Set your daily targets</h2>
               <p style={qsub}>These are starting points — adjust anytime in Settings.</p>
-              <div style={{ marginBottom: 26 }}>
+              <div style={{ marginBottom: 28 }}>
                 <div style={qlabel}>Sleep target: {form.sleepTarget}h</div>
-                <input type="range" min="5" max="10" step="0.5" value={form.sleepTarget} onChange={(e) => setForm({ ...form, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+                <input type="range" min="5" max="10" step="0.5" value={form.sleepTarget} onChange={(e) => setForm({ ...form, sleepTarget: Number(e.target.value) })} />
               </div>
               <div>
                 <div style={qlabel}>Water goal: {(form.waterGoal / 1000).toFixed(1)}L</div>
-                <input type="range" min="1500" max="4000" step="250" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+                <input type="range" min="1500" max="4000" step="250" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} />
               </div>
             </div>
           )}
@@ -868,7 +1053,7 @@ function Onboarding({ onComplete, onCancel }) {
               <p style={qsub}>A 90-day arc begins the moment you confirm.</p>
               <Glass style={{ padding: 20, marginTop: 10 }}>
                 <ReviewRow label="Experience" value={form.experience} />
-                <ReviewRow label="Goals" value={form.goals.map((g) => GOAL_OPTIONS.find((o) => o.id === g)?.label).join(", ")} />
+                <ReviewRow label="Goals" value={form.goals.map((g) => (GOAL_OPTIONS.find((o) => o.id === g) || {}).label).join(", ")} />
                 <ReviewRow label="Training days" value={form.trainingDays.join(", ")} />
                 <ReviewRow label="Session length" value={form.duration} />
                 <ReviewRow label="Sleep target" value={`${form.sleepTarget}h`} />
@@ -882,7 +1067,7 @@ function Onboarding({ onComplete, onCancel }) {
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40 }}>
           <Button variant="ghost" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))} icon={ChevronLeft}>{step === 0 ? "Cancel" : "Back"}</Button>
           {step < steps.length - 1 ? (
-            <Button onClick={() => canNext() && setStep(step + 1)} style={{ opacity: canNext() ? 1 : 0.5 }}>Continue</Button>
+            <Button onClick={() => canNext() && setStep(step + 1)} style={{ opacity: canNext() ? 1 : 0.5, pointerEvents: canNext() ? "auto" : "none" }}>Continue</Button>
           ) : (
             <Button icon={Sparkles} onClick={() => onComplete({ ...form, habits: DEFAULT_HABITS.filter((h) => form.habits.includes(h.id)) })}>ENTER THE ARC</Button>
           )}
@@ -892,716 +1077,472 @@ function Onboarding({ onComplete, onCancel }) {
   );
 }
 
-const qh = { fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: "#F2F8FC", margin: "0 0 8px" };
-const qsub = { fontSize: 13.5, color: "#8FA4B8", margin: "0 0 22px" };
-const qlabel = { fontSize: 12.5, color: "#9FB4C6", marginBottom: 10 };
-const qinput = { width: "100%", boxSizing: "border-box", padding: "14px 16px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#EAF4FB", fontSize: 15, outline: "none", fontFamily: "'Inter',sans-serif" };
-
-function ReviewRow({ label, value, last }) {
+/* ============================== WORKOUT PICKER / SLEEP MODAL / SESSION ============================== */
+function WorkoutPicker({ onPick, onClose }) {
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
-      <span style={{ fontSize: 12.5, color: "#6E8296" }}>{label}</span>
-      <span style={{ fontSize: 13, color: "#EAF4FB", textAlign: "right", maxWidth: "65%" }}>{value || "—"}</span>
-    </div>
-  );
-}
-
-function Chip({ selected, onClick, label, icon: Icon, wide, compact }) {
-  return (
-    <button className="wa-btn" onClick={onClick} style={{
-      display: "flex", alignItems: "center", gap: 8, justifyContent: compact ? "center" : "flex-start",
-      padding: compact ? "10px 16px" : "13px 16px", borderRadius: 12, cursor: "pointer",
-      background: selected ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
-      border: selected ? "1px solid rgba(127,216,255,0.5)" : "1px solid rgba(255,255,255,0.09)",
-      color: selected ? "#8FE1FF" : "#B9C7D3", fontSize: 13.5, fontFamily: "'Inter',sans-serif",
-      width: wide ? "100%" : "auto", boxSizing: "border-box",
-    }}>
-      {Icon && <Icon size={15} />}
-      {label}
-      {selected && !Icon && <Check size={13} style={{ marginLeft: "auto" }} />}
-    </button>
-  );
-}
-
-/* ============================================================================
-   APP SHELL
-============================================================================ */
-
-const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Home },
-  { id: "workouts", label: "Workouts", icon: Dumbbell },
-  { id: "habits", label: "Habits", icon: Target },
-  { id: "progress", label: "Progress", icon: TrendingUp },
-  { id: "calendar", label: "Calendar", icon: CalendarIcon },
-  { id: "achievements", label: "Achievements", icon: Trophy },
-  { id: "journal", label: "Journal", icon: BookOpen },
-  { id: "settings", label: "Settings", icon: SettingsIcon },
-];
-const MOBILE_NAV_IDS = ["dashboard", "workouts", "habits", "progress", "settings"];
-
-function Sidebar({ page, setPage, profile, streak, setFocusMode }) {
-  return (
-    <div className="wa-sidebar" style={{ width: 236, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "26px 16px", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 10px", marginBottom: 30 }}>
-        <Snowflake size={18} color="#79D6FF" />
-        <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2, fontSize: 13, color: "#EAF4FB" }}>WINTER ARC</span>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
-        {NAV_ITEMS.map((item) => {
-          const active = page === item.id;
-          return (
-            <button key={item.id} className="wa-navbtn" onClick={() => setPage(item.id)} style={{
-              display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 11, border: "none", cursor: "pointer",
-              background: active ? "rgba(127,216,255,0.1)" : "transparent", color: active ? "#8FE1FF" : "#8399AC",
-              fontSize: 13.5, fontFamily: "'Inter',sans-serif", fontWeight: active ? 600 : 500, textAlign: "left", position: "relative",
-            }}>
-              {active && <div style={{ position: "absolute", left: 0, top: 6, bottom: 6, width: 3, borderRadius: 3, background: "linear-gradient(180deg,#79D6FF,#5B8CFF)" }} />}
-              <item.icon size={16} /> {item.label}
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button className="wa-btn" onClick={() => setFocusMode(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 11, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9FB4C6", fontSize: 12.5, cursor: "pointer" }}>
-          <Zap size={14} /> Focus Mode
-        </button>
-        <Glass style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#79D6FF,#5B8CFF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#04121F" }}>
-            {(profile.name || "?").slice(0, 1).toUpperCase()}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12.5, color: "#EAF4FB", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.name}</div>
-            <div style={{ fontSize: 11, color: "#6E8296", display: "flex", alignItems: "center", gap: 4 }}><Flame size={11} color="#F5B971" /> {streak} day streak</div>
-          </div>
-        </Glass>
-      </div>
-    </div>
-  );
-}
-
-function MobileNav({ page, setPage }) {
-  return (
-    <div className="wa-mobilenav" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, display: "none" }}>
-      <Glass style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none", display: "flex", justifyContent: "space-around", padding: "10px 4px calc(10px + env(safe-area-inset-bottom))", width: "100%" }}>
-        {MOBILE_NAV_IDS.map((id) => {
-          const item = NAV_ITEMS.find((n) => n.id === id);
-          const active = page === id;
-          return (
-            <button key={id} onClick={() => setPage(id)} style={{ background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: active ? "#8FE1FF" : "#647890", cursor: "pointer", padding: "4px 8px" }}>
-              <item.icon size={19} />
-              <span style={{ fontSize: 9.5 }}>{item.label}</span>
-            </button>
-          );
-        })}
-      </Glass>
-    </div>
-  );
-}
-
-function Topbar({ profile, dayIndex, soundOn, setSoundOn }) {
-  const greet = greetingForHour(new Date().getHours());
-  return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", position: "sticky", top: 0, zIndex: 20, background: "linear-gradient(180deg, rgba(6,8,11,0.92), rgba(6,8,11,0.75) 70%, transparent)", backdropFilter: "blur(10px)" }}>
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#7E97AC" }}><greet.Icon size={13} /> {greet.text}</div>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 20, color: "#F2F8FC", marginTop: 2 }}>{profile.name}</div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div className="wa-daylabel" style={{ fontSize: 11.5, color: "#6E8296", display: "none" }}>ARC DAY {Math.min(dayIndex, ARC_LENGTH)} / {ARC_LENGTH}</div>
-        <button className="wa-btn" onClick={() => setSoundOn((s) => !s)} title="Toggle sound feedback" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", color: "#9FB4C6", cursor: "pointer" }}>
-          {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
-   DASHBOARD
-============================================================================ */
-
-function Dashboard({ profile, today, dayIndex, streak, bestStreak, score, updateToday, setPage, onLogSleep }) {
-  const habitsTotal = profile.habits.length;
-  const habitsDone = profile.habits.filter((h) => today.habits[h.id]).length;
-
-  return (
-    <div style={pagewrap}>
-      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }} className="wa-dash-top">
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.72)", backdropFilter: "blur(4px)", zIndex: 120, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()} style={{ width: 720, maxWidth: "94vw", maxHeight: "86vh", overflow: "auto" }}>
         <Glass style={{ padding: 26 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
             <div>
-              <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 8 }}>WINTER ARC PROGRESS</div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 34, color: "#F2F8FC" }}>
-                DAY <CountUp value={Math.min(dayIndex, ARC_LENGTH)} /> / {ARC_LENGTH}
-              </div>
-              <div style={{ fontSize: 13, color: "#79D6FF", marginTop: 4, fontWeight: 600 }}>{Math.round((Math.min(dayIndex, ARC_LENGTH) / ARC_LENGTH) * 100)}% complete</div>
-              <div style={{ display: "flex", gap: 22, marginTop: 22 }}>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#EAF4FB", display: "flex", alignItems: "center", gap: 6 }}><Flame size={16} color="#F5B971" /> {streak}</div>
-                  <div style={{ fontSize: 11, color: "#6E8296" }}>Current streak</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: "#EAF4FB" }}>{bestStreak}</div>
-                  <div style={{ fontSize: 11, color: "#6E8296" }}>Best streak</div>
-                </div>
-              </div>
+              <div style={{ fontSize: 11, letterSpacing: 2, color: "#6E8296" }}>TODAY'S SESSION</div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 20, color: "#F2F8FC", marginTop: 4 }}>Pick your battle.</div>
             </div>
-            <ArcRing percent={(Math.min(dayIndex, ARC_LENGTH) / ARC_LENGTH) * 100} size={140} stroke={10} label={`${Math.min(dayIndex, ARC_LENGTH)}/${ARC_LENGTH}`} sublabel="ARC" accentId="dash" />
+            <button onClick={onClose} aria-label="close" style={{ background: "none", border: "none", color: "#5C7082", cursor: "pointer" }}><X size={18} /></button>
           </div>
-        </Glass>
-
-        <Glass style={{ padding: 26, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 8 }}>WINTER SCORE</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 40, color: "#F2F8FC" }}><CountUp value={score} /></span>
-              <span style={{ fontSize: 15, color: "#6E8296" }}>/ 100</span>
-            </div>
-          </div>
-          <ProgressBar percent={score} />
-          <div style={{ fontSize: 11.5, color: "#5C7082", marginTop: 10, lineHeight: 1.4 }}>A motivational snapshot of today — not a measure of your worth.</div>
-        </Glass>
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 18 }} className="wa-dash-grid">
-        <Glass style={{ padding: 22 }}>
-          <div style={cardHead}><Dumbbell size={15} color="#79D6FF" /> Today's Workout</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{today.workoutCategory || "Not scheduled"}</div>
-          <div style={{ marginTop: 14 }}>
-            {today.workoutDone ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#6EE7C6", fontSize: 12.5 }}><CheckCircle2 size={15} /> Completed today</div>
-            ) : (
-              <Button size="sm" onClick={() => setPage("workouts")} icon={Play}>Start Workout</Button>
-            )}
-          </div>
-        </Glass>
-
-        <Glass style={{ padding: 22 }}>
-          <div style={cardHead}><Target size={15} color="#79D6FF" /> Habits</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{habitsDone} / {habitsTotal} done</div>
-          <ProgressBar percent={(habitsDone / (habitsTotal || 1)) * 100} height={6} />
-          <div style={{ marginTop: 12 }}><Button size="sm" variant="secondary" onClick={() => setPage("habits")}>Open checklist</Button></div>
-        </Glass>
-
-        <Glass style={{ padding: 22 }}>
-          <div style={cardHead}><Droplets size={15} color="#79D6FF" /> Hydration</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8 }}>
-            <WaterBottle percent={(today.water / profile.waterGoal) * 100} />
-            <div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#EAF4FB" }}>{(today.water / 1000).toFixed(2)}L</div>
-              <div style={{ fontSize: 11.5, color: "#6E8296" }}>of {(profile.waterGoal / 1000).toFixed(1)}L goal</div>
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
-            <Button size="sm" variant="secondary" onClick={() => updateToday({ water: Math.min(profile.waterGoal * 1.5, today.water + 250) })}>+250ml</Button>
-            <Button size="sm" variant="secondary" onClick={() => updateToday({ water: Math.min(profile.waterGoal * 1.5, today.water + 500) })}>+500ml</Button>
-          </div>
-        </Glass>
-
-        <Glass style={{ padding: 22 }}>
-          <div style={cardHead}><Moon size={15} color="#79D6FF" /> Sleep</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{today.sleep?.hours ? `${today.sleep.hours}h logged` : "Not logged"}</div>
-          <div style={{ marginTop: 12 }}><Button size="sm" variant="secondary" onClick={onLogSleep}>Log sleep</Button></div>
-        </Glass>
-      </div>
-
-      <QuoteStrip />
-    </div>
-  );
-}
-
-function QuoteStrip() {
-  const [q] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-  return (
-    <div style={{ marginTop: 22, textAlign: "center", padding: "26px 0", fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, letterSpacing: 1, color: "#5C7082" }}>
-      "{q}"
-    </div>
-  );
-}
-
-const pagewrap = { padding: "8px 28px 100px", maxWidth: 1180, margin: "0 auto" };
-const cardHead = { display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#8FA4B8", letterSpacing: 0.3 };
-
-/* ============================================================================
-   WORKOUTS
-============================================================================ */
-
-function Workouts({ profile, today, completeWorkout }) {
-  const [active, setActive] = useState(null);
-  const categories = Object.keys(WORKOUT_LIBRARY);
-
-  if (active) {
-    return <WorkoutSession category={active} onExit={() => setActive(null)} onFinish={() => { completeWorkout(active); setActive(null); }} />;
-  }
-
-  return (
-    <div style={pagewrap}>
-      <PageHeader title="Workouts" subtitle="Pick a category. Every session includes sets, reps, rest, and an interactive mode." />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="wa-workout-grid">
-        {categories.map((cat) => {
-          const w = WORKOUT_LIBRARY[cat];
-          const doneToday = today.workoutDone && today.workoutCategory === cat;
-          return (
-            <div key={cat} className="wa-hoverlift">
-              <Glass style={{ padding: 22, display: "flex", flexDirection: "column", height: "100%" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{cat}</div>
-                  {doneToday && <CheckCircle2 size={17} color="#6EE7C6" />}
+          <div className="wa-grid-3">
+            {Object.entries(WORKOUT_LIBRARY).map(([name, def]) => (
+              <button key={name} className="wa-btn" onClick={() => onPick(name)}
+                style={{ textAlign: "left", padding: 16, borderRadius: 14, cursor: "pointer",
+                  background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)", color: "inherit" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 14.5, color: "#EAF4FB" }}>{name}</span>
+                  <span style={{ fontSize: 10, padding: "3px 8px", borderRadius: 99, color: DIFF_COLOR[def.difficulty], border: `1px solid ${DIFF_COLOR[def.difficulty]}44`, background: `${DIFF_COLOR[def.difficulty]}14`, letterSpacing: 0.5 }}>{def.difficulty.toUpperCase()}</span>
                 </div>
-                <div style={{ fontSize: 12, color: "#6E8296", marginTop: 6 }}>{w.muscles} · {w.difficulty} · ~{w.duration} min</div>
-                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
-                  {w.exercises.slice(0, 3).map((ex) => (
-                    <div key={ex.name} style={{ fontSize: 12.5, color: "#8FA4B8", display: "flex", justifyContent: "space-between" }}>
-                      <span>{ex.name}</span><span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6E8296" }}>{ex.sets}×{ex.reps}</span>
-                    </div>
-                  ))}
-                  {w.exercises.length > 3 && <div style={{ fontSize: 11.5, color: "#5C7082" }}>+{w.exercises.length - 3} more</div>}
-                </div>
-                <div style={{ marginTop: 18 }}>
-                  <Button size="sm" onClick={() => setActive(cat)} icon={Play}>{doneToday ? "Do again" : "Start"}</Button>
-                </div>
-              </Glass>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function WorkoutSession({ category, onExit, onFinish }) {
-  const w = WORKOUT_LIBRARY[category];
-  const [idx, setIdx] = useState(0);
-  const [phase, setPhase] = useState("exercise");
-  const [restLeft, setRestLeft] = useState(0);
-  const [completedSets, setCompletedSets] = useState({});
-  const timerRef = useRef(null);
-
-  useEffect(() => {
-    if (phase === "resting" && restLeft > 0) {
-      timerRef.current = setTimeout(() => setRestLeft((r) => r - 1), 1000);
-    } else if (phase === "resting" && restLeft === 0) {
-      setPhase("exercise");
-    }
-    return () => clearTimeout(timerRef.current);
-  }, [phase, restLeft]);
-
-  const ex = w.exercises[idx];
-  const key = `${idx}`;
-  const setsDone = completedSets[key] || 0;
-
-  const completeSet = () => {
-    const next = setsDone + 1;
-    setCompletedSets((c) => ({ ...c, [key]: next }));
-    if (next >= ex.sets) {
-      if (idx < w.exercises.length - 1) {
-        setIdx(idx + 1);
-        if (ex.rest > 0) { setPhase("resting"); setRestLeft(ex.rest); } else setPhase("exercise");
-      } else {
-        setPhase("done");
-      }
-    } else {
-      if (ex.rest > 0) { setPhase("resting"); setRestLeft(ex.rest); } else setPhase("exercise");
-    }
-  };
-
-  const skip = () => {
-    if (idx < w.exercises.length - 1) { setIdx(idx + 1); setPhase("exercise"); }
-    else setPhase("done");
-  };
-
-  if (phase === "done") {
-    return (
-      <div style={pagewrap}>
-        <Glass style={{ padding: 50, textAlign: "center", maxWidth: 480, margin: "60px auto" }}>
-          <Trophy size={36} color="#F5B971" style={{ margin: "0 auto" }} />
-          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, color: "#F2F8FC", marginTop: 18 }}>{category} complete.</h2>
-          <p style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8 }}>Logged to today. +20 discipline XP.</p>
-          <div style={{ marginTop: 26 }}><Button onClick={onFinish} icon={Check}>Done</Button></div>
-        </Glass>
-      </div>
-    );
-  }
-
-  return (
-    <div style={pagewrap}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
-        <button onClick={onExit} style={{ background: "none", border: "none", color: "#8FA4B8", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}><ChevronLeft size={16} /> Exit session</button>
-        <div style={{ fontSize: 12, color: "#6E8296" }}>{idx + 1} / {w.exercises.length}</div>
-      </div>
-      <Glass style={{ padding: 40, maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
-        {phase === "resting" ? (
-          <div key="rest" className="wa-stepfade">
-            <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>REST</div>
-            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 64, color: "#79D6FF", margin: "16px 0" }}>{restLeft}s</div>
-            <ProgressBar percent={(1 - restLeft / (ex.rest || 1)) * 100} />
-            <div style={{ marginTop: 24 }}><Button variant="secondary" size="sm" onClick={() => setPhase("exercise")}>Skip rest</Button></div>
-          </div>
-        ) : (
-          <div key={`ex-${idx}`} className="wa-stepfade">
-            <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>EXERCISE</div>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 30, color: "#F2F8FC", margin: "10px 0" }}>{ex.name}</div>
-            <div style={{ fontSize: 15, color: "#79D6FF", fontFamily: "'JetBrains Mono',monospace" }}>Set {setsDone + 1} of {ex.sets} · {ex.reps}</div>
-            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
-              <Button onClick={completeSet} icon={Check}>COMPLETE SET</Button>
-              <Button variant="secondary" onClick={skip} icon={SkipForward}>SKIP</Button>
-            </div>
-          </div>
-        )}
-      </Glass>
-    </div>
-  );
-}
-
-/* ============================================================================
-   HABITS
-============================================================================ */
-
-function Habits({ profile, days, today, toggleHabit, addHabit }) {
-  const [newHabit, setNewHabit] = useState("");
-  const last7 = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(new Date(), -6 + i)), []);
-
-  return (
-    <div style={pagewrap}>
-      <PageHeader title="Habits" subtitle="Check off today. Watch the streak build." />
-      <Glass style={{ padding: 22, marginBottom: 18 }}>
-        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>TODAY</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {profile.habits.map((h) => {
-            const checked = !!today.habits[h.id];
-            return (
-              <button key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 10px", background: "none", border: "none", cursor: "pointer", borderRadius: 10, textAlign: "left" }}>
-                {checked ? <CheckCircle2 size={19} color="#6EE7C6" /> : <Circle size={19} color="#425466" />}
-                <span style={{ fontSize: 14, color: checked ? "#EAF4FB" : "#9FB4C6", textDecoration: checked ? "line-through" : "none", textDecorationColor: "rgba(234,244,251,0.3)" }}>{h.name}</span>
+                <div style={{ fontSize: 11.5, color: "#6E8296", marginTop: 8 }}>{def.muscles} · {def.duration} min · {def.exercises.length} moves</div>
               </button>
-            );
-          })}
+            ))}
+          </div>
+        </Glass>
+      </div>
+    </div>
+  );
+}
+
+function SleepModal({ initial, onSave, onClose }) {
+  const [hours, setHours] = useState(initial && initial.hours ? initial.hours : 7.5);
+  const [quality, setQuality] = useState(initial && initial.quality ? initial.quality : 3);
+  const h = Math.floor(hours), m = Math.round((hours - h) * 60);
+  return (
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.72)", backdropFilter: "blur(4px)", zIndex: 130, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
+        <Glass style={{ padding: 26, width: 400, maxWidth: "90vw" }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: "#6E8296" }}>LAST NIGHT</div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 34, color: "#F2F8FC", marginTop: 6 }}>
+            {h}h {m > 0 ? `${m}m` : ""}
+          </div>
+          <input type="range" min="4" max="10" step="0.25" value={hours} onChange={(e) => setHours(Number(e.target.value))} style={{ marginTop: 14 }} />
+          <div style={{ marginTop: 22, marginBottom: 10, fontSize: 12.5, color: "#9FB4C6" }}>How did it feel?</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {[1, 2, 3, 4, 5].map((q) => (
+              <button key={q} className="wa-btn" onClick={() => setQuality(q)}
+                style={{ flex: 1, padding: "10px 0", borderRadius: 10, cursor: "pointer", fontSize: 13,
+                  background: quality === q ? "rgba(127,214,255,0.18)" : "rgba(255,255,255,0.05)",
+                  border: `1px solid ${quality === q ? "rgba(127,214,255,0.55)" : "rgba(255,255,255,0.1)"}`,
+                  color: quality === q ? "#EAF4FB" : "#6E8296", fontWeight: quality === q ? 700 : 400 }}>
+                {q}
+              </button>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 24, justifyContent: "flex-end" }}>
+            <Button variant="ghost" size="sm" onClick={onClose}>Cancel</Button>
+            <Button size="sm" icon={Moon} onClick={() => onSave({ hours, quality })}>Save</Button>
+          </div>
+        </Glass>
+      </div>
+    </div>
+  );
+}
+
+function SessionPlayer({ category, def, prefillDone, soundOn, onFinish, onClose }) {
+  const [done, setDone] = useState(prefillDone || {});
+  const [rest, setRest] = useState(null);
+  const toggleSet = (ei, si) => {
+    const ex = def.exercises[ei];
+    const arr = [...(done[ei] || Array(ex.sets).fill(false))];
+    arr[si] = !arr[si];
+    setDone({ ...done, [ei]: arr });
+    if (arr[si] && ex.rest > 0) setRest({ secs: ex.rest });
+  };
+  const totalSets = def.exercises.reduce((a, e) => a + e.sets, 0);
+  const doneCount = Object.values(done).reduce((a, arr) => a + (arr || []).filter(Boolean).length, 0);
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 150, background: "#05070A", overflow: "auto" }}>
+      <SnowField count={14} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 680, margin: "0 auto", padding: "26px 22px 140px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 18 }}>
+          <div>
+            <div style={{ fontSize: 11, letterSpacing: 2, color: "#6E8296" }}>ACTIVE SESSION</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: "#F2F8FC", marginTop: 4 }}>{category}</div>
+            <div style={{ fontSize: 12, color: "#8FA4B8", marginTop: 4 }}>{def.muscles} · {def.duration} min · <span style={{ color: DIFF_COLOR[def.difficulty] }}>{def.difficulty}</span></div>
+          </div>
+          <button onClick={onClose} aria-label="close" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, color: "#8FA4B8", cursor: "pointer", padding: 8 }}><X size={18} /></button>
         </div>
-        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-          <input value={newHabit} onChange={(e) => setNewHabit(e.target.value)} placeholder="Add a custom habit" style={{ ...qinput, padding: "10px 14px", fontSize: 13.5 }} />
-          <Button size="sm" icon={Plus} onClick={() => { if (newHabit.trim()) { addHabit(newHabit.trim()); setNewHabit(""); } }}>Add</Button>
+        <div style={{ marginBottom: 22 }}>
+          <ProgressBar percent={(doneCount / totalSets) * 100} height={7} />
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7, fontSize: 11, color: "#6E8296", fontFamily: "'JetBrains Mono',monospace" }}>
+            <span>{doneCount} / {totalSets} SETS</span><span>{Math.round((doneCount / totalSets) * 100)}%</span>
+          </div>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {def.exercises.map((ex, ei) => (
+            <Glass key={ex.name} style={{ padding: 18 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10 }}>
+                <div style={{ display: "flex", gap: 10, alignItems: "baseline" }}>
+                  <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "#5C7082" }}>{pad(ei + 1)}</span>
+                  <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15.5, color: "#EAF4FB" }}>{ex.name}</span>
+                </div>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: "#8FA4B8", flexShrink: 0 }}>{ex.sets} × {ex.reps}{ex.rest > 0 ? ` · ${ex.rest}s rest` : ""}</span>
+              </div>
+              <div style={{ display: "flex", gap: 9, marginTop: 14, flexWrap: "wrap" }}>
+                {Array.from({ length: ex.sets }).map((_, si) => {
+                  const isDone = done[ei] && done[ei][si];
+                  return (
+                    <button key={si} className={`wa-setdot ${isDone ? "done" : ""}`} onClick={() => toggleSet(ei, si)} aria-label={`set ${si + 1}`}>
+                      {isDone ? <Check size={14} /> : si + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </Glass>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, padding: "16px 22px calc(16px + env(safe-area-inset-bottom))", background: "linear-gradient(to top, #05070A 65%, rgba(5,7,10,0))", zIndex: 2 }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          {rest ? (
+            <RestTimer seconds={rest.secs} soundOn={soundOn} onEnd={() => setRest(null)} onClose={() => setRest(null)} />
+          ) : (
+            <Button size="lg" icon={CheckCircle2} onClick={onFinish} style={{ width: "100%" }}>
+              FINISH SESSION
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================== PAGES ============================== */
+function TodayPage({ state, stats, api }) {
+  const profile = state.profile;
+  const today = state.days[todayKey()] || emptyDay();
+  const habitDone = profile.habits.filter((h) => today.habits[h.id]).length;
+  const waterGoal = profile.waterGoal || 2500;
+  const waterPct = Math.round((today.water / waterGoal) * 100);
+  const quote = QUOTES[(stats.dayIndex - 1) % QUOTES.length];
+  const greet = greetingForHour(new Date().getHours());
+  const week = Array.from({ length: 7 }).map((_, idx) => {
+    const i = 6 - idx;
+    const d = addDays(new Date(), -i), k = dateKey(d);
+    return { d, k, score: computeDayScore(state.days[k], profile), isToday: i === 0 };
+  });
+  const now = new Date();
+  const dateStr = now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+  return (
+    <div className="wa-fadein">
+      <Glass style={{ padding: 26, marginBottom: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#6E8296", letterSpacing: 1 }}>
+            <greet.Icon size={13} /> {dateStr.toUpperCase()}
+          </div>
+          <StatChip icon={Sparkles} color="#8FE1FF">DAY {stats.dayIndex} / {ARC_LENGTH}</StatChip>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 30, flexWrap: "wrap" }}>
+          <ArcRing percent={stats.score} size={168} stroke={11} label={`${stats.score}%`} sublabel="DAY SCORE" accentId="today" />
+          <div style={{ flex: 1, minWidth: 230, display: "flex", flexDirection: "column", gap: 15 }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: "#F2F8FC" }}>
+              {stats.score >= 100 ? "Perfect day. Full marks." : stats.score > 0 ? "Keep the arc alive." : `Let's go, ${profile.name}.`}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+              <MiniStat icon={Flame} label="STREAK" value={`${stats.streak} days`} accent="#F5B971" />
+              <MiniStat icon={TrendingUp} label="ACTIVE DAYS" value={`${stats.activeDays}`} />
+              <MiniStat icon={Dumbbell} label="WORKOUTS" value={`${stats.workouts}`} />
+              <MiniStat icon={Zap} label="XP / LEVEL" value={`${stats.xp} · LV ${stats.level}`} />
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", color: "#8FA4B8", fontSize: 13 }}>
+          <Sparkles size={13} color="#79D6FF" /> {quote}
         </div>
       </Glass>
+
+      <div className="wa-grid-2" style={{ marginBottom: 16 }}>
+        <Glass style={{ padding: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <Dumbbell size={16} color="#79D6FF" />
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>Workout</span>
+            </div>
+            <span style={{ fontSize: 11, color: "#6E8296", fontFamily: "'JetBrains Mono',monospace" }}>25 PTS</span>
+          </div>
+          {today.workoutDone ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "14px 16px", borderRadius: 12, background: "rgba(110,231,198,0.08)", border: "1px solid rgba(110,231,198,0.25)" }}>
+              <CheckCircle2 size={20} color="#6EE7C6" />
+              <div>
+                <div style={{ fontSize: 14, color: "#EAF4FB", fontWeight: 600 }}>{today.workoutCategory} — done</div>
+                <div style={{ fontSize: 11.5, color: "#6E8296", marginTop: 2 }}>Logged. +20 XP earned.</div>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 13, color: "#8FA4B8", marginBottom: 14, lineHeight: 1.5 }}>Nine session types, guided sets, rest timers with audio cues.</div>
+              <Button icon={Play} onClick={api.openPicker}>START SESSION</Button>
+            </div>
+          )}
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <Target size={16} color="#79D6FF" />
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>Habits</span>
+            </div>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: habitDone === profile.habits.length && profile.habits.length ? "#6EE7C6" : "#8FA4B8" }}>{habitDone}/{profile.habits.length}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflow: "auto" }}>
+            {profile.habits.map((h) => {
+              const on = !!today.habits[h.id];
+              return (
+                <button key={h.id} onClick={() => api.toggleHabit(h.id)}
+                  style={{ display: "flex", alignItems: "center", gap: 11, padding: "9px 12px", borderRadius: 11, cursor: "pointer", textAlign: "left",
+                    background: on ? "rgba(127,214,255,0.08)" : "transparent", border: `1px solid ${on ? "rgba(127,214,255,0.3)" : "rgba(255,255,255,0.06)"}`, transition: "all .15s" }}>
+                  <span style={{ width: 20, height: 20, borderRadius: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                    background: on ? "#7FD4FF" : "rgba(255,255,255,0.07)", border: on ? "none" : "1px solid rgba(255,255,255,0.15)" }}>
+                    {on && <Check size={12} color="#04121F" strokeWidth={3} />}
+                  </span>
+                  <span style={{ fontSize: 13.5, color: on ? "#EAF4FB" : "#8FA4B8" }}>{h.name}</span>
+                </button>
+              );
+            })}
+            {profile.habits.length === 0 && <div style={{ fontSize: 13, color: "#6E8296" }}>No habits yet — add some in Settings.</div>}
+          </div>
+        </Glass>
+      </div>
+
+      <div className="wa-grid-2" style={{ marginBottom: 16 }}>
+        <Glass style={{ padding: 22, display: "flex", gap: 22, alignItems: "center", flexWrap: "wrap" }}>
+          <WaterBottle percent={waterPct} id="today" />
+          <div style={{ flex: 1, minWidth: 170 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 8 }}>
+              <Droplets size={16} color="#79D6FF" />
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>Hydration</span>
+            </div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 22, color: "#F2F8FC" }}>
+              <CountUp value={today.water} format={(v) => (v / 1000).toFixed(2)} />L
+              <span style={{ fontSize: 12, color: "#6E8296", fontWeight: 400 }}> / {(waterGoal / 1000).toFixed(1)}L</span>
+            </div>
+            <div style={{ marginTop: 10, marginBottom: 14 }}><ProgressBar percent={waterPct} color="linear-gradient(90deg,#5BB8E8,#8FE1FF)" /></div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Button size="sm" variant="secondary" icon={Plus} onClick={() => api.addWater(250)}>250ml</Button>
+              <Button size="sm" variant="secondary" icon={Plus} onClick={() => api.addWater(500)}>500ml</Button>
+              <Button size="sm" variant="ghost" onClick={() => api.addWater(-today.water)}>Reset</Button>
+            </div>
+          </div>
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+              <Moon size={16} color="#79D6FF" />
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>Sleep</span>
+            </div>
+            <span style={{ fontSize: 11, color: "#6E8296", fontFamily: "'JetBrains Mono',monospace" }}>30 PTS</span>
+          </div>
+          {today.sleep && today.sleep.hours ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+              <div>
+                <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 26, color: "#F2F8FC" }}>
+                  {Math.floor(today.sleep.hours)}h {today.sleep.hours % 1 ? `${Math.round((today.sleep.hours % 1) * 60)}m` : ""}
+                </div>
+                <div style={{ fontSize: 12, color: "#8FA4B8", marginTop: 4 }}>Quality: {"◆".repeat(today.sleep.quality)}{"◇".repeat(5 - today.sleep.quality)}</div>
+              </div>
+              <div style={{ marginLeft: "auto" }}>
+                <Button size="sm" variant="secondary" onClick={api.openSleep}>Edit</Button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: 13, color: "#8FA4B8", marginBottom: 14, lineHeight: 1.5 }}>Log last night to complete your day score.</div>
+              <Button icon={Moon} onClick={api.openSleep}>LOG SLEEP</Button>
+            </div>
+          )}
+        </Glass>
+      </div>
 
       <Glass style={{ padding: 22 }}>
-        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 16 }}>WEEKLY HEATMAP</div>
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 480 }}>
-            <thead>
-              <tr>
-                <td style={{ width: 130 }} />
-                {last7.map((d) => <th key={dateKey(d)} style={{ fontSize: 10.5, color: "#6E8296", fontWeight: 500, padding: "0 4px 8px" }}>{d.toLocaleDateString(undefined, { weekday: "short" })}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {profile.habits.map((h) => (
-                <tr key={h.id}>
-                  <td style={{ fontSize: 12.5, color: "#9FB4C6", padding: "6px 10px 6px 0" }}>{h.name}</td>
-                  {last7.map((d) => {
-                    const dk = dateKey(d);
-                    const done = !!days[dk]?.habits?.[h.id];
-                    return (
-                      <td key={dk} style={{ padding: 4, textAlign: "center" }}>
-                        <div style={{ width: 22, height: 22, borderRadius: 6, margin: "0 auto", background: done ? "linear-gradient(135deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.06)" }} />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>This week</span>
+          <span style={{ fontSize: 11.5, color: "#6E8296" }}>avg {Math.round(week.reduce((a, w) => a + w.score, 0) / 7)} pts</span>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          {week.map((w) => (
+            <div key={w.k} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+              <div title={`${w.k} — ${w.score}`} style={{
+                width: "100%", aspectRatio: "1", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center",
+                fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5,
+                background: w.score >= 70 ? "rgba(127,214,255,0.22)" : w.score > 0 ? "rgba(127,214,255,0.09)" : "rgba(255,255,255,0.04)",
+                border: w.isToday ? "1.5px solid #8FE1FF" : "1px solid rgba(255,255,255,0.06)",
+                color: w.score >= 70 ? "#EAF4FB" : "#6E8296", fontWeight: w.score >= 70 ? 700 : 400,
+              }}>{w.score > 0 ? w.score : ""}</div>
+              <span style={{ fontSize: 10.5, color: w.isToday ? "#8FE1FF" : "#5C7082" }}>{WEEKDAY_LETTER[w.d.getDay()]}</span>
+            </div>
+          ))}
         </div>
       </Glass>
     </div>
   );
 }
 
-function WaterBottle({ percent }) {
-  const animated = useAnimatedNumber(percent, 1000);
-  const h = 140;
-  const fillH = Math.min(100, Math.max(0, animated)) / 100 * (h - 14);
+function TrainPage({ state, stats, api }) {
+  const today = state.days[todayKey()] || emptyDay();
   return (
-    <svg width="70" height={h + 10} viewBox={`0 0 70 ${h + 10}`}>
-      <defs>
-        <clipPath id="bottleClip"><rect x="14" y="8" width="42" height={h - 8} rx="14" /></clipPath>
-        <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#8FE1FF" />
-          <stop offset="100%" stopColor="#3E7CB1" />
-        </linearGradient>
-      </defs>
-      <rect x="26" y="0" width="18" height="12" rx="4" fill="rgba(255,255,255,0.15)" />
-      <rect x="14" y="8" width="42" height={h - 8} rx="14" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-      <g clipPath="url(#bottleClip)">
-        <rect x="14" y={h - fillH + 8} width="42" height={fillH} fill="url(#waterGrad)" />
-      </g>
-    </svg>
+    <div className="wa-fadein">
+      <PageHead eyebrow="TRAINING" title="Session Library"
+        sub={today.workoutDone ? `Logged today: ${today.workoutCategory}. You can still add another session.` : "Pick a category to start today's session."} />
+      <div className="wa-grid-3">
+        {Object.entries(WORKOUT_LIBRARY).map(([name, def]) => (
+          <Glass key={name} style={{ padding: 20, display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{name}</span>
+              <span style={{ fontSize: 9.5, padding: "3px 8px", borderRadius: 99, letterSpacing: 0.5, color: DIFF_COLOR[def.difficulty], border: `1px solid ${DIFF_COLOR[def.difficulty]}44`, background: `${DIFF_COLOR[def.difficulty]}14` }}>
+                {def.difficulty.toUpperCase()}
+              </span>
+            </div>
+            <div style={{ fontSize: 12, color: "#6E8296", marginTop: 8 }}>{def.muscles}</div>
+            <div style={{ display: "flex", gap: 14, marginTop: 14, fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: "#8FA4B8" }}>
+              <span>{def.duration} MIN</span><span>{def.exercises.length} MOVES</span>
+            </div>
+            <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid rgba(255,255,255,0.06)", fontSize: 12.5, color: "#8FA4B8", lineHeight: 1.6, flex: 1 }}>
+              {def.exercises.slice(0, 3).map((e) => `${e.name} (${e.sets}×${e.reps})`).join(" · ")}{def.exercises.length > 3 ? " ·…" : ""}
+            </div>
+            <div style={{ marginTop: 16 }}>
+              <Button size="sm" icon={Play} onClick={() => api.startSession(name)} style={{ width: "100%" }}>START</Button>
+            </div>
+          </Glass>
+        ))}
+      </div>
+    </div>
   );
 }
 
-/* ============================================================================
-   PROGRESS ANALYTICS
-============================================================================ */
-
-function Progress({ days, profile }) {
-  const [range, setRange] = useState("week");
-  const rangeDays = range === "week" ? 7 : range === "month" ? 30 : ARC_LENGTH;
-
-  const chartData = useMemo(() => {
-    return Array.from({ length: rangeDays }).map((_, i) => {
-      const d = addDays(new Date(), -(rangeDays - 1) + i);
-      const dk = dateKey(d);
-      const day = days[dk] || emptyDay();
-      return {
-        label: rangeDays <= 7 ? d.toLocaleDateString(undefined, { weekday: "short" }) : `${d.getMonth() + 1}/${d.getDate()}`,
-        score: computeDayScore(day, profile),
-        water: Math.round((day.water / 1000) * 100) / 100,
-        sleep: day.sleep?.hours || 0,
-        habits: Object.values(day.habits || {}).filter(Boolean).length,
-      };
-    });
-  }, [days, profile, rangeDays]);
-
+function ProgressPage({ state, stats }) {
+  const [range, setRange] = useState(14);
+  const profile = state.profile;
+  const rangeData = useMemo(() => Array.from({ length: range }).map((_, idx) => {
+    const i = range - 1 - idx;
+    const d = addDays(new Date(), -i), k = dateKey(d);
+    return { key: k, label: `${d.getMonth() + 1}/${d.getDate()}`, value: computeDayScore(state.days[k], profile) };
+  }), [state, range]);
+  const waterData = useMemo(() => Array.from({ length: 7 }).map((_, idx) => {
+    const i = 6 - idx;
+    const d = addDays(new Date(), -i), k = dateKey(d);
+    return { key: k, label: `${d.getMonth() + 1}/${d.getDate()}`, value: (state.days[k] || {}).water || 0 };
+  }), [state]);
+  const loggedDays = Object.keys(state.days).length || 1;
   return (
-    <div style={pagewrap}>
-      <PageHeader title="Progress" subtitle="Consistency across every metric that matters." />
-      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-        {[["week", "THIS WEEK"], ["month", "THIS MONTH"], ["arc", "WINTER ARC"]].map(([id, label]) => (
-          <button key={id} className="wa-btn" onClick={() => setRange(id)} style={{
-            padding: "8px 16px", borderRadius: 10, fontSize: 12, cursor: "pointer",
-            background: range === id ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
-            border: range === id ? "1px solid rgba(127,216,255,0.4)" : "1px solid rgba(255,255,255,0.08)",
-            color: range === id ? "#8FE1FF" : "#8FA4B8",
-          }}>{label}</button>
+    <div className="wa-fadein">
+      <PageHead eyebrow="ANALYTICS" title="Progress" sub="Every metric of your arc, honestly measured." />
+
+      <div className="wa-stats" style={{ marginBottom: 16 }}>
+        {[
+          { icon: Flame, label: "CURRENT STREAK", value: `${stats.streak}d`, accent: "#F5B971" },
+          { icon: Snowflake, label: "BEST STREAK", value: `${stats.bestStreak}d` },
+          { icon: CheckCircle2, label: "ACTIVE DAYS", value: `${stats.activeDays}`, accent: "#6EE7C6" },
+          { icon: Dumbbell, label: "WORKOUTS", value: `${stats.workouts}` },
+        ].map((s) => (
+          <Glass key={s.label} style={{ padding: 18 }}>
+            <MiniStat icon={s.icon} label={s.label} value={s.value} accent={s.accent} />
+          </Glass>
         ))}
       </div>
 
       <Glass style={{ padding: 22, marginBottom: 16 }}>
-        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>WINTER SCORE TREND</div>
-        <MiniAreaChart data={chartData} dataKey="score" color="#79D6FF" height={220} />
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "#5C7082", marginTop: 6 }}>
-          <span>{chartData[0]?.label}</span><span>{chartData[chartData.length - 1]?.label}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, flexWrap: "wrap", gap: 10 }}>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>Day score</span>
+          <div style={{ display: "flex", gap: 6 }}>
+            {[14, 30, 90].map((r) => (
+              <button key={r} className={`wa-chip ${range === r ? "sel" : ""}`} onClick={() => setRange(r)} style={{ padding: "6px 12px", fontSize: 11.5 }}>{r}D</button>
+            ))}
+          </div>
         </div>
+        <ScoreAreaChart data={rangeData} />
       </Glass>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="wa-progress-grid">
+      <div className="wa-grid-2" style={{ marginBottom: 16 }}>
         <Glass style={{ padding: 22 }}>
-          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>HYDRATION (L)</div>
-          <MiniBarChart data={chartData} dataKey="water" color="#5B8CFF" height={180} />
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 12 }}>Water — last 7 days</div>
+          <WaterBarChart data={waterData} goal={profile.waterGoal || 2500} />
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "#5C7082", marginTop: 6, fontFamily: "'JetBrains Mono',monospace" }}>
+            {waterData.map((w) => <span key={w.key}>{w.label}</span>)}
+          </div>
         </Glass>
+
         <Glass style={{ padding: 22 }}>
-          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>SLEEP (HOURS)</div>
-          <MiniBarChart data={chartData} dataKey="sleep" color="#8FE1FF" height={180} />
-        </Glass>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
-   CALENDAR
-============================================================================ */
-
-function CalendarPage({ days, profile }) {
-  const [monthOffset, setMonthOffset] = useState(0);
-  const [selected, setSelected] = useState(null);
-  const base = new Date(); base.setMonth(base.getMonth() + monthOffset); base.setDate(1);
-  const year = base.getFullYear(), month = base.getMonth();
-  const firstDow = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const cells = [];
-  for (let i = 0; i < firstDow; i++) cells.push(null);
-  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
-
-  const stateFor = (d) => {
-    const dk = dateKey(d);
-    const score = computeDayScore(days[dk], profile);
-    if (d > new Date()) return "future";
-    if (score >= 60) return "complete";
-    if (score > 0) return "partial";
-    return "rest";
-  };
-
-  return (
-    <div style={pagewrap}>
-      <PageHeader title="Calendar" subtitle="Every day of your arc, at a glance." />
-      <Glass style={{ padding: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <button className="wa-btn" onClick={() => setMonthOffset((m) => m - 1)} style={navBtn}><ChevronLeft size={16} /></button>
-          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: "#EAF4FB" }}>{base.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
-          <button className="wa-btn" onClick={() => setMonthOffset((m) => m + 1)} style={navBtn}><ChevronRight size={16} /></button>
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 8 }}>
-          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 10.5, color: "#5C7082" }}>{d}</div>)}
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
-          {cells.map((d, i) => {
-            if (!d) return <div key={i} />;
-            const st = stateFor(d);
-            const isToday = dateKey(d) === todayKey();
-            const colors = { complete: "rgba(110,231,198,0.18)", partial: "rgba(245,185,113,0.16)", rest: "rgba(255,255,255,0.03)", future: "transparent" };
-            const borders = { complete: "1px solid rgba(110,231,198,0.4)", partial: "1px solid rgba(245,185,113,0.35)", rest: "1px solid rgba(255,255,255,0.06)", future: "1px solid rgba(255,255,255,0.03)" };
-            return (
-              <button key={i} onClick={() => st !== "future" && setSelected(d)} style={{
-                aspectRatio: "1", borderRadius: 10, background: colors[st], border: isToday ? "1px solid #79D6FF" : borders[st],
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: st === "future" ? "default" : "pointer", gap: 2,
-              }}>
-                <span style={{ fontSize: 12, color: st === "future" ? "#3A4552" : "#C7D8E5" }}>{d.getDate()}</span>
-                {st === "complete" && <Check size={10} color="#6EE7C6" />}
-                {st === "partial" && <MinusCircle size={10} color="#F5B971" />}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ display: "flex", gap: 16, marginTop: 18, fontSize: 11, color: "#8FA4B8" }}>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Check size={11} color="#6EE7C6" /> Completed</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><MinusCircle size={11} color="#F5B971" /> Partial</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>— Rest / no data</span>
-        </div>
-      </Glass>
-
-      {selected && <DayDetailModal date={selected} day={days[dateKey(selected)]} profile={profile} onClose={() => setSelected(null)} />}
-    </div>
-  );
-}
-
-const navBtn = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 9, width: 32, height: 32, color: "#9FB4C6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
-
-function DayDetailModal({ date, day, profile, onClose }) {
-  const d = day || emptyDay();
-  const score = computeDayScore(d, profile);
-  return (
-    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
-      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
-        <Glass style={{ padding: 28, width: 420, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>{date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
-          </div>
-          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 6 }}>Winter Score</div>
-          <ProgressBar percent={score} />
-          <div style={{ fontSize: 13, color: "#EAF4FB", marginTop: 6 }}>{score} / 100</div>
-
-          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }}>
-            <DetailRow icon={Dumbbell} label="Workout" value={d.workoutDone ? d.workoutCategory : "Not logged"} />
-            <DetailRow icon={Target} label="Habits" value={`${Object.values(d.habits || {}).filter(Boolean).length} / ${profile.habits.length}`} />
-            <DetailRow icon={Droplets} label="Water" value={`${(d.water / 1000).toFixed(2)}L`} />
-            <DetailRow icon={Moon} label="Sleep" value={d.sleep?.hours ? `${d.sleep.hours}h` : "Not logged"} />
-            {d.journal?.notes && <DetailRow icon={BookOpen} label="Journal" value={d.journal.notes} />}
-          </div>
-        </Glass>
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ icon: Icon, label, value }) {
-  return (
-    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-      <Icon size={15} color="#79D6FF" style={{ marginTop: 2, flexShrink: 0 }} />
-      <div>
-        <div style={{ fontSize: 11, color: "#6E8296" }}>{label}</div>
-        <div style={{ fontSize: 13.5, color: "#EAF4FB", marginTop: 2 }}>{value}</div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
-   ACHIEVEMENTS
-============================================================================ */
-
-function Achievements({ derived, xp, level }) {
-  return (
-    <div style={pagewrap}>
-      <PageHeader title="Achievements" subtitle="Milestones for showing up — not for punishment when you don't." />
-      <Glass style={{ padding: 24, marginBottom: 20 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <div>
-            <div style={{ fontSize: 11.5, color: "#6E8296" }}>LEVEL {level}</div>
-            <div style={{ fontSize: 13, color: "#8FE1FF" }}>DISCIPLINE XP</div>
-          </div>
-          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#EAF4FB" }}>{xp % 100} / 100</div>
-        </div>
-        <ProgressBar percent={xp % 100} />
-      </Glass>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="wa-ach-grid">
-        {ACHIEVEMENT_DEFS.map((a) => {
-          const unlocked = a.check(derived);
-          return (
-            <div key={a.id} className="wa-hoverlift">
-              <Glass style={{ padding: 22, opacity: unlocked ? 1 : 0.55, height: "100%" }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: unlocked ? "linear-gradient(135deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {unlocked ? <Trophy size={19} color="#04121F" /> : <Lock size={16} color="#5C7082" />}
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 14 }}>Habit consistency</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {profile.habits.length === 0 && <div style={{ fontSize: 13, color: "#6E8296" }}>No habits tracked.</div>}
+            {profile.habits.map((h) => {
+              const cnt = Object.values(state.days).filter((d) => d.habits && d.habits[h.id]).length;
+              const pct = Math.round((cnt / loggedDays) * 100);
+              return (
+                <div key={h.id}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, marginBottom: 5 }}>
+                    <span style={{ color: "#9FB4C6" }}>{h.name}</span>
+                    <span style={{ fontFamily: "'JetBrains Mono',monospace", color: pct >= 60 ? "#6EE7C6" : "#8FA4B8" }}>{pct}%</span>
+                  </div>
+                  <ProgressBar percent={pct} height={6} />
                 </div>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14.5, color: "#EAF4FB", marginTop: 14, letterSpacing: 0.4 }}>{a.name}</div>
-                <div style={{ fontSize: 12.5, color: "#8FA4B8", marginTop: 6 }}>{a.desc}</div>
-              </Glass>
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        </Glass>
       </div>
+
+      <Glass style={{ padding: 22 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 16 }}>
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB" }}>The arc so far</span>
+          <span style={{ fontSize: 11.5, color: "#6E8296", fontFamily: "'JetBrains Mono',monospace" }}>{stats.activeDays}/{ARC_LENGTH} ACTIVE</span>
+        </div>
+        <Heatmap days={state.days} profile={profile} startDate={profile.startDate} dayIndex={stats.dayIndex} />
+      </Glass>
     </div>
   );
 }
 
-/* ============================================================================
-   JOURNAL
-============================================================================ */
-
-const MOODS = ["😞", "😐", "🙂", "😄", "🔥"];
-
-function Journal({ days, saveJournal }) {
-  const [mood, setMood] = useState(3);
-  const [energy, setEnergy] = useState(3);
-  const [notes, setNotes] = useState("");
-  const [wentWell, setWentWell] = useState("");
-  const [improve, setImprove] = useState("");
-
-  const entries = useMemo(() => Object.entries(days)
-    .filter(([, d]) => d.journal)
-    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
-    .slice(0, 30), [days]);
-
-  const submit = () => {
-    saveJournal({ mood, energy, notes, wentWell, improve, time: new Date().toISOString() });
-    setNotes(""); setWentWell(""); setImprove("");
-  };
-
+function JournalPage({ state, api }) {
+  const today = state.days[todayKey()] || emptyDay();
+  const j = today.journal;
+  const [mood, setMood] = useState(j ? j.mood : null);
+  const [energy, setEnergy] = useState(j ? j.energy : 6);
+  const [notes, setNotes] = useState(j ? j.notes : "");
+  useEffect(() => { setMood(j ? j.mood : null); setEnergy(j ? j.energy : 6); setNotes(j ? j.notes : ""); }, [j && j.ts]);
+  const entries = Object.keys(state.days)
+    .filter((k) => k !== todayKey() && state.days[k].journal)
+    .sort((a, b) => (a < b ? 1 : -1))
+    .map((k) => ({ k, ...state.days[k].journal }));
   return (
-    <div style={pagewrap}>
-      <PageHeader title="Journal" subtitle="How did today go?" />
-      <Glass style={{ padding: 24, marginBottom: 22 }}>
-        <div style={{ display: "flex", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
-          <div>
-            <div style={qlabel}>Mood</div>
-            <div style={{ display: "flex", gap: 6 }}>
-              {MOODS.map((m, i) => (
-                <button key={i} onClick={() => setMood(i)} style={{ fontSize: 20, padding: 8, borderRadius: 10, background: mood === i ? "rgba(127,216,255,0.14)" : "transparent", border: mood === i ? "1px solid rgba(127,216,255,0.4)" : "1px solid transparent", cursor: "pointer" }}>{m}</button>
-              ))}
-            </div>
-          </div>
-          <div style={{ flex: 1, minWidth: 160 }}>
-            <div style={qlabel}>Energy: {energy}/5</div>
-            <input type="range" min="1" max="5" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
-          </div>
+    <div className="wa-fadein">
+      <PageHead eyebrow="REFLECTION" title="Journal" sub="One honest paragraph a day beats an hour of overthinking." />
+      <Glass style={{ padding: 22, marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 16 }}>Today's entry</div>
+        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 8 }}>Mood</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 18 }}>
+          {MOODS.map((m) => <Chip key={m} label={m} selected={mood === m} onClick={() => setMood(m)} compact />)}
         </div>
-        <textarea placeholder="Notes for today..." value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...qinput, minHeight: 70, resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }} className="wa-journal-grid">
-          <textarea placeholder="What went well?" value={wentWell} onChange={(e) => setWentWell(e.target.value)} style={{ ...qinput, minHeight: 60, resize: "vertical" }} />
-          <textarea placeholder="What should improve tomorrow?" value={improve} onChange={(e) => setImprove(e.target.value)} style={{ ...qinput, minHeight: 60, resize: "vertical" }} />
+        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 8 }}>Energy — <span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#EAF4FB" }}>{energy}/10</span></div>
+        <input type="range" min="1" max="10" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} style={{ marginBottom: 18 }} />
+        <textarea className="wa-input" rows="4" placeholder="What worked today? What's next?" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <div style={{ marginTop: 14 }}>
+          <Button icon={BookOpen} onClick={() => api.saveJournal({ mood, energy, notes })}>{j ? "UPDATE ENTRY" : "SAVE ENTRY"}</Button>
         </div>
-        <div style={{ marginTop: 16 }}><Button onClick={submit} icon={BookOpen}>Save entry</Button></div>
       </Glass>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        {entries.length === 0 && <EmptyState icon={BookOpen} text="No entries yet. Your first reflection starts the timeline." />}
-        {entries.map(([dk, d]) => (
-          <Glass key={dk} style={{ padding: 18 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontSize: 12.5, color: "#8FA4B8" }}>{new Date(dk).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
-              <span style={{ fontSize: 16 }}>{MOODS[d.journal.mood]}</span>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {entries.length === 0 && <div style={{ fontSize: 13, color: "#6E8296", padding: "8px 2px" }}>Past entries will appear here.</div>}
+        {entries.map((e) => (
+          <Glass key={e.k} style={{ padding: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: "#8FA4B8" }}>{e.k}</span>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {e.mood && <span style={{ fontSize: 11, padding: "3px 10px", borderRadius: 99, background: "rgba(127,214,255,0.1)", color: "#8FD4FF", border: "1px solid rgba(127,214,255,0.25)" }}>{e.mood}</span>}
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: "#6E8296" }}>{e.energy}/10</span>
+              </div>
             </div>
-            {d.journal.notes && <div style={{ fontSize: 13.5, color: "#EAF4FB", marginTop: 8 }}>{d.journal.notes}</div>}
+            {e.notes && <div style={{ fontSize: 13.5, color: "#C6D6E2", marginTop: 10, lineHeight: 1.6 }}>{e.notes}</div>}
           </Glass>
         ))}
       </div>
@@ -1609,412 +1550,388 @@ function Journal({ days, saveJournal }) {
   );
 }
 
-function EmptyState({ icon: Icon, text }) {
+function ChallengesPage({ state, stats }) {
   return (
-    <Glass style={{ padding: 40, textAlign: "center" }}>
-      <Icon size={26} color="#425466" style={{ margin: "0 auto" }} />
-      <div style={{ fontSize: 13, color: "#6E8296", marginTop: 12 }}>{text}</div>
-    </Glass>
-  );
-}
-
-/* ============================================================================
-   CHALLENGES
-============================================================================ */
-
-function Challenges({ joined, toggleChallenge }) {
-  return (
-    <Glass style={{ padding: 24, marginTop: 18 }}>
-      <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 16 }}>OPTIONAL CHALLENGES</div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="wa-challenge-grid">
+    <div className="wa-fadein">
+      <PageHead eyebrow="LONG GAME" title="Challenges" sub="Optional quests for when the daily grind needs a bigger mountain." />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {CHALLENGE_DEFS.map((c) => {
-          const isJoined = joined.includes(c.id);
+          const val = Math.min(c.target, c.get(stats, state));
+          const done = val >= c.target;
+          const pct = Math.round((val / c.target) * 100);
           return (
-            <div key={c.id} style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ fontSize: 13.5, fontWeight: 600, color: "#EAF4FB" }}>{c.name}</div>
-                <span style={{ fontSize: 10.5, color: "#6E8296" }}>{c.days}d</span>
+            <Glass key={c.id} style={{ padding: 20, border: done ? "1px solid rgba(110,231,198,0.35)" : undefined }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  {done ? <CheckCircle2 size={20} color="#6EE7C6" /> : <Target size={18} color="#79D6FF" />}
+                  <div>
+                    <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: done ? "#EAF4FB" : "#EAF4FB" }}>{c.name}</div>
+                    <div style={{ fontSize: 12.5, color: "#8FA4B8", marginTop: 2 }}>{c.desc}</div>
+                  </div>
+                </div>
+                <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12.5, color: done ? "#6EE7C6" : "#8FA4B8", flexShrink: 0 }}>{val}/{c.target}</span>
               </div>
-              <div style={{ fontSize: 12, color: "#8FA4B8", marginTop: 6 }}>{c.desc}</div>
-              <div style={{ marginTop: 12 }}>
-                <Button size="sm" variant={isJoined ? "secondary" : "primary"} onClick={() => toggleChallenge(c.id)}>{isJoined ? "Leave" : "Join"}</Button>
-              </div>
-            </div>
+              <ProgressBar percent={pct} color={done ? "#6EE7C6" : "linear-gradient(90deg,#79D6FF,#5B8CFF)"} height={6} />
+            </Glass>
           );
         })}
       </div>
-    </Glass>
-  );
-}
-
-/* ============================================================================
-   SETTINGS
-============================================================================ */
-
-function Settings({ profile, updateProfile, exportData, resetArc, soundOn, setSoundOn, notifOn, setNotifOn }) {
-  const [confirmReset, setConfirmReset] = useState(false);
-  const [local, setLocal] = useState(profile);
-
-  useEffect(() => setLocal(profile), [profile]);
-
-  return (
-    <div style={pagewrap}>
-      <PageHeader title="Settings" subtitle="Your profile, goals, and preferences." />
-
-      <Glass style={{ padding: 24, marginBottom: 16 }}>
-        <SettingsSection title="Profile" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="wa-settings-grid">
-          <div>
-            <div style={qlabel}>Name</div>
-            <input value={local.name} onChange={(e) => setLocal({ ...local, name: e.target.value })} style={{ ...qinput, padding: "10px 14px" }} />
-          </div>
-          <div>
-            <div style={qlabel}>Age</div>
-            <input type="number" value={local.age} onChange={(e) => setLocal({ ...local, age: e.target.value })} style={{ ...qinput, padding: "10px 14px" }} />
-          </div>
-        </div>
-        <div style={{ marginTop: 14 }}><Button size="sm" onClick={() => updateProfile(local)}>Save profile</Button></div>
-      </Glass>
-
-      <Glass style={{ padding: 24, marginBottom: 16 }}>
-        <SettingsSection title="Goals & Targets" />
-        <div style={{ marginBottom: 20 }}>
-          <div style={qlabel}>Sleep target: {local.sleepTarget}h</div>
-          <input type="range" min="5" max="10" step="0.5" value={local.sleepTarget} onChange={(e) => setLocal({ ...local, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
-        </div>
-        <div>
-          <div style={qlabel}>Water goal: {(local.waterGoal / 1000).toFixed(1)}L</div>
-          <input type="range" min="1500" max="4000" step="250" value={local.waterGoal} onChange={(e) => setLocal({ ...local, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
-        </div>
-        <div style={{ marginTop: 14 }}><Button size="sm" onClick={() => updateProfile(local)}>Save targets</Button></div>
-      </Glass>
-
-      <Glass style={{ padding: 24, marginBottom: 16 }}>
-        <SettingsSection title="Preferences" />
-        <ToggleRow label="Sound feedback" checked={soundOn} onChange={setSoundOn} />
-        <ToggleRow label="Notifications" checked={notifOn} onChange={setNotifOn} />
-      </Glass>
-
-      <Glass style={{ padding: 24, marginBottom: 16 }}>
-        <SettingsSection title="Data" />
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <Button size="sm" variant="secondary" icon={Download} onClick={exportData}>Export data (JSON)</Button>
-          <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirmReset(true)}>Reset Winter Arc</Button>
-        </div>
-      </Glass>
-
-      <ConfirmDialog
-        open={confirmReset}
-        title="Reset your Winter Arc?"
-        body="This clears all logged days, streaks, journal entries, XP, and achievements. Your profile stays. This can't be undone."
-        confirmLabel="Reset everything"
-        danger
-        onCancel={() => setConfirmReset(false)}
-        onConfirm={() => { resetArc(); setConfirmReset(false); }}
-      />
     </div>
   );
 }
 
-function SettingsSection({ title }) {
-  return <div style={{ fontSize: 12, letterSpacing: 1.2, color: "#6E8296", marginBottom: 18 }}>{title.toUpperCase()}</div>;
-}
-
-function ToggleRow({ label, checked, onChange }) {
+function AwardsPage({ state, stats }) {
+  const unlocked = Object.keys(state.achievements).length;
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
-      <span style={{ fontSize: 13.5, color: "#C7D8E5" }}>{label}</span>
-      <button onClick={() => onChange(!checked)} style={{ width: 42, height: 24, borderRadius: 99, background: checked ? "linear-gradient(90deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s" }}>
-        <div style={{ width: 18, height: 18, borderRadius: 99, background: "#fff", position: "absolute", top: 3, left: checked ? 20 : 2, transition: "left .2s" }} />
-      </button>
+    <div className="wa-fadein">
+      <PageHead eyebrow="MILESTONES" title="Achievements" sub={`${unlocked} of ${ACHIEVEMENT_DEFS.length} unlocked · ${stats.xp} XP · LV ${stats.level} — ${RANKS[Math.min(RANKS.length - 1, stats.level - 1)]}`} />
+      <div className="wa-grid-3">
+        {ACHIEVEMENT_DEFS.map((a) => {
+          const when = state.achievements[a.id];
+          return (
+            <Glass key={a.id} style={{ padding: 22, opacity: when ? 1 : 0.55, border: when ? "1px solid rgba(143,225,255,0.3)" : undefined, textAlign: "center" }}>
+              <div style={{ width: 54, height: 54, borderRadius: 16, margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center",
+                background: when ? "rgba(127,214,255,0.14)" : "rgba(255,255,255,0.05)" }}>
+                {when ? <Trophy size={24} color="#8FE1FF" /> : <Lock size={20} color="#5C7082" />}
+              </div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14, letterSpacing: 1.5, color: when ? "#F2F8FC" : "#6E8296" }}>{a.name}</div>
+              <div style={{ fontSize: 12.5, color: "#8FA4B8", marginTop: 6, lineHeight: 1.5 }}>{a.desc}</div>
+              {when && <div style={{ fontSize: 11, color: "#6EE7C6", marginTop: 10, fontFamily: "'JetBrains Mono',monospace" }}>UNLOCKED {when}</div>}
+            </Glass>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-function PageHeader({ title, subtitle }) {
+function SettingsPage({ state, api }) {
+  const profile = state.profile;
+  const [newHabit, setNewHabit] = useState("");
+  const fileRef = useRef(null);
   return (
-    <div style={{ marginBottom: 22, paddingTop: 14 }}>
-      <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: "#F2F8FC", margin: 0 }}>{title}</h1>
-      {subtitle && <p style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 6 }}>{subtitle}</p>}
-    </div>
-  );
-}
+    <div className="wa-fadein">
+      <PageHead eyebrow="CONTROL" title="Settings" sub="Your arc, your rules." />
 
-/* ============================================================================
-   SLEEP LOG MODAL
-============================================================================ */
-
-function SleepLogModal({ initial, sleepTarget, onSave, onClose }) {
-  const [bedtime, setBedtime] = useState(initial?.bedtime || "23:00");
-  const [wake, setWake] = useState(initial?.wake || "07:00");
-  const [quality, setQuality] = useState(initial?.quality || 3);
-
-  const hours = useMemo(() => {
-    const [bh, bm] = bedtime.split(":").map(Number);
-    const [wh, wm] = wake.split(":").map(Number);
-    let mins = (wh * 60 + wm) - (bh * 60 + bm);
-    if (mins <= 0) mins += 24 * 60;
-    return Math.round((mins / 60) * 10) / 10;
-  }, [bedtime, wake]);
-
-  return (
-    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
-      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
-        <Glass style={{ padding: 28, width: 400, maxWidth: "90vw" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>Log sleep</div>
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
+      <div className="wa-grid-2" style={{ marginBottom: 16 }}>
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 16 }}>Profile</div>
+          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 7 }}>Name</div>
+          <input className="wa-input" value={profile.name} onChange={(e) => api.updateProfile({ name: e.target.value })} style={{ marginBottom: 16 }} />
+          <div style={{ display: "flex", gap: 20, fontSize: 13, color: "#8FA4B8" }}>
+            <span>Age: <b style={{ color: "#EAF4FB" }}>{profile.age || "—"}</b></span>
+            <span>Level: <b style={{ color: "#EAF4FB" }}>{profile.experience}</b></span>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-            <div>
-              <div style={qlabel}>Bedtime</div>
-              <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
+          <div style={{ marginTop: 14, fontSize: 12, color: "#6E8296" }}>Arc started <b style={{ color: "#8FA4B8", fontFamily: "'JetBrains Mono',monospace" }}>{profile.startDate}</b></div>
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 16 }}>Daily targets</div>
+          <div style={qlabel}>Water goal — <span style={{ color: "#EAF4FB", fontFamily: "'JetBrains Mono',monospace" }}>{(profile.waterGoal / 1000).toFixed(1)}L</span></div>
+          <input type="range" min="1500" max="4000" step="250" value={profile.waterGoal} onChange={(e) => api.updateProfile({ waterGoal: Number(e.target.value) })} style={{ marginBottom: 20 }} />
+          <div style={qlabel}>Sleep target — <span style={{ color: "#EAF4FB", fontFamily: "'JetBrains Mono',monospace" }}>{profile.sleepTarget}h</span></div>
+          <input type="range" min="5" max="10" step="0.5" value={profile.sleepTarget} onChange={(e) => api.updateProfile({ sleepTarget: Number(e.target.value) })} />
+        </Glass>
+      </div>
+
+      <Glass style={{ padding: 22, marginBottom: 16 }}>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 14 }}>Habits</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {profile.habits.map((h) => (
+            <span key={h.id} style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "7px 8px 7px 13px", borderRadius: 10, background: "rgba(127,214,255,0.08)", border: "1px solid rgba(127,214,255,0.25)", fontSize: 13, color: "#EAF4FB" }}>
+              {h.name}
+              <button onClick={() => api.removeHabit(h.id)} aria-label={`remove ${h.name}`} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer", display: "flex", padding: 2 }}><X size={13} /></button>
+            </span>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <input className="wa-input" placeholder="Add a custom habit…" value={newHabit} onChange={(e) => setNewHabit(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && newHabit.trim()) { api.addHabit(newHabit.trim()); setNewHabit(""); } }} />
+          <Button icon={Plus} onClick={() => { if (newHabit.trim()) { api.addHabit(newHabit.trim()); setNewHabit(""); } }}>Add</Button>
+        </div>
+      </Glass>
+
+      <div className="wa-grid-2">
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 14 }}>Sound cues</div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#8FA4B8", fontSize: 13.5 }}>
+              {state.settings.sound ? <Volume2 size={16} color="#79D6FF" /> : <VolumeX size={16} />}
+              Rest-timer beeps {state.settings.sound ? "on" : "off"}
             </div>
-            <div>
-              <div style={qlabel}>Wake time</div>
-              <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
-            </div>
+            <Switch on={state.settings.sound} onToggle={api.toggleSound} />
           </div>
-          <div style={{ marginBottom: 18 }}>
-            <div style={qlabel}>Sleep quality: {["Poor", "Rough", "Okay", "Good", "Great"][quality - 1]}</div>
-            <input type="range" min="1" max="5" value={quality} onChange={(e) => setQuality(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 15, color: "#EAF4FB", marginBottom: 14 }}>Data</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <Button size="sm" variant="secondary" icon={Download} onClick={api.doExport}>Export</Button>
+            <Button size="sm" variant="secondary" onClick={() => fileRef.current && fileRef.current.click()}>Import</Button>
+            <Button size="sm" variant="danger" icon={Trash2} onClick={api.askReset}>Reset arc</Button>
           </div>
-          <Glass style={{ padding: 14, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12.5, color: "#8FA4B8" }}>Total sleep</span>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, color: "#79D6FF", fontWeight: 700 }}>{hours}h</span>
-          </Glass>
-          <div style={{ fontSize: 11.5, color: "#5C7082", marginBottom: 18, lineHeight: 1.4 }}>Sleep needs vary. Consistency matters more than any single number — target is {sleepTarget}h.</div>
-          <Button onClick={() => onSave({ bedtime, wake, hours, quality })} icon={Check}>Save sleep log</Button>
+          <input ref={fileRef} type="file" accept="application/json" style={{ display: "none" }} onChange={api.onImport} />
+          <div style={{ fontSize: 11.5, color: "#5C7082", marginTop: 12 }}>Everything is stored locally in your browser. Export gives you a JSON backup.</div>
         </Glass>
       </div>
     </div>
   );
 }
 
-/* ============================================================================
-   FOCUS MODE
-============================================================================ */
+/* ============================== APP SHELL ============================== */
+const NAV = [
+  { id: "today", label: "Today", icon: Home },
+  { id: "train", label: "Training", icon: Dumbbell },
+  { id: "progress", label: "Progress", icon: TrendingUp },
+  { id: "journal", label: "Journal", icon: BookOpen },
+  { id: "challenges", label: "Challenges", icon: Target },
+  { id: "awards", label: "Achievements", icon: Trophy },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
+];
+const NAV_MOB = ["today", "train", "progress", "awards", "settings"];
 
-function FocusMode({ onExit, today, dayIndex }) {
-  const [seconds, setSeconds] = useState(0);
-  const [running, setRunning] = useState(false);
-  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
-
-  useEffect(() => {
-    if (!running) return;
-    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [running]);
-
-  const mm = pad(Math.floor(seconds / 60));
-  const ss = pad(seconds % 60);
-
-  return (
-    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "#04060A", zIndex: 500, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-      <SnowField count={24} />
-      <button onClick={onExit} style={{ position: "absolute", top: 26, right: 26, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, width: 38, height: 38, color: "#9FB4C6", cursor: "pointer", zIndex: 2 }}><X size={17} /></button>
-      <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
-        <div style={{ fontSize: 12, letterSpacing: 2, color: "#6E8296", marginBottom: 14 }}>ARC DAY {Math.min(dayIndex, ARC_LENGTH)} · TODAY'S OBJECTIVE</div>
-        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 32, color: "#F2F8FC", marginBottom: 40 }}>{today.workoutCategory || "Show up."}</div>
-        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 72, color: "#79D6FF", letterSpacing: 2 }}>{mm}:{ss}</div>
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 30 }}>
-          <Button onClick={() => setRunning((r) => !r)} icon={running ? Pause : Play}>{running ? "Pause" : "Start"}</Button>
-          <Button variant="secondary" onClick={() => { setSeconds(0); setRunning(false); }} icon={RotateCcw}>Reset</Button>
-        </div>
-        <div style={{ marginTop: 60, fontSize: 15, color: "#5C7082", fontStyle: "italic" }}>"{quote}"</div>
-      </div>
-    </div>
-  );
-}
-
-/* ============================================================================
-   ROOT APP
-============================================================================ */
-
-function WinterArcApp() {
-  const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("landing");
-  const [page, setPage] = useState("dashboard");
-  const [focusMode, setFocusMode] = useState(false);
+function App() {
+  const [state, setState] = useState(loadState);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [page, setPage] = useState("today");
   const [toast, setToast] = useState(null);
-  const [soundOn, setSoundOn] = useState(true);
-  const [notifOn, setNotifOn] = useState(true);
+  const [confirmState, setConfirmState] = useState(null);
+  const [burst, setBurst] = useState(null);
+  const [session, setSession] = useState(null);
+  const [picker, setPicker] = useState(false);
+  const [sleepModal, setSleepModal] = useState(false);
   const exploreRef = useRef(null);
-
-  const [profile, setProfile] = useState(null);
-  const [days, setDays] = useState({});
-  const [arcStartDate, setArcStartDate] = useState(null);
-  const [bestStreakStored, setBestStreakStored] = useState(0);
-  const [challenges, setChallenges] = useState([]);
-  const [sleepModalOpen, setSleepModalOpen] = useState(false);
+  const prevScoreRef = useRef(null);
+  const mountedRef = useRef(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed.profile) { setProfile(parsed.profile); setView("app"); }
-        setDays(parsed.days || {});
-        setArcStartDate(parsed.arcStartDate || null);
-        setBestStreakStored(parsed.bestStreak || 0);
-        setChallenges(parsed.challenges || []);
-        setSoundOn(parsed.soundOn ?? true);
-        setNotifOn(parsed.notifOn ?? true);
-      }
-    } catch (e) {}
-    setLoading(false);
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }, [state]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+  const showToast = useCallback((msg) => setToast({ msg }), []);
+  const celebrate = useCallback((title) => setBurst({ n: Date.now(), title }), []);
+
+  const patchDay = useCallback((key, patch) => {
+    setState((s) => ({ ...s, days: { ...s.days, [key]: { ...emptyDay(), ...s.days[key], ...patch } } }));
+  }, []);
+  const updateProfile = useCallback((patch) => {
+    setState((s) => ({ ...s, profile: { ...s.profile, ...patch } }));
   }, []);
 
+  const today = state.days[todayKey()] || emptyDay();
+  const stats = useMemo(() => {
+    if (!state.profile) return { streak: 0, bestStreak: 0, activeDays: 0, workouts: 0, xp: 0, level: 1, dayIndex: 1, score: 0 };
+    const streak = computeStreak(state.days, state.profile);
+    const bestStreak = computeBestStreak(state.days, state.profile);
+    const activeDays = Object.keys(state.days).filter((k) => computeDayScore(state.days[k], state.profile) > 0).length;
+    const workouts = Object.values(state.days).filter((d) => d.workoutDone).length;
+    const xp = xpFromState(state.days, state.profile);
+    const level = Math.floor(xp / XP_PER_LEVEL) + 1;
+    const dayIndex = Math.min(ARC_LENGTH, Math.max(1, daysBetween(new Date(state.profile.startDate + "T00:00:00"), new Date()) + 1));
+    const score = computeDayScore(state.days[todayKey()], state.profile);
+    return { streak, bestStreak, activeDays, workouts, xp, level, dayIndex, score };
+  }, [state]);
+
+  // achievements: unlock + toast
   useEffect(() => {
-    if (loading || !profile) return;
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ profile, days, arcStartDate, bestStreak: bestStreakStored, challenges, soundOn, notifOn }));
-    } catch (e) {}
-  }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn, loading]);
+    if (!state.onboarded) return;
+    const newly = ACHIEVEMENT_DEFS.filter((a) => !state.achievements[a.id] && a.check(stats));
+    if (newly.length) {
+      const ach = { ...state.achievements };
+      newly.forEach((a) => { ach[a.id] = todayKey(); });
+      setState((s) => ({ ...s, achievements: ach }));
+      newly.forEach((a, i) => {
+        setTimeout(() => { showToast(`Achievement unlocked — ${a.name}`); celebrate(i === newly.length - 1 ? a.name : null); }, i * 700);
+      });
+    }
+  }, [stats]);
 
-  const today = days[todayKey()] || emptyDay();
-  const dayIndex = arcStartDate ? daysBetween(new Date(arcStartDate), new Date()) + 1 : 1;
-  const streak = useMemo(() => computeStreak(days, profile), [days, profile]);
-  const bestStreak = Math.max(streak, bestStreakStored);
-  const score = computeDayScore(today, profile);
-  const xp = useMemo(() => xpFromState(days, profile), [days, profile]);
-  const level = Math.floor(xp / 100) + 1;
-  const totalActiveDays = useMemo(() => Object.values(days).filter((d) => computeDayScore(d, profile) > 0).length, [days, profile]);
+  // perfect day celebration
+  useEffect(() => {
+    if (!mountedRef.current) { mountedRef.current = true; prevScoreRef.current = stats.score; return; }
+    if (state.onboarded && prevScoreRef.current < 100 && stats.score >= 100) {
+      celebrate("PERFECT DAY");
+      showToast("Perfect day. 100 points.");
+    }
+    prevScoreRef.current = stats.score;
+  }, [stats.score, state.onboarded]);
 
-  useEffect(() => { if (streak > bestStreakStored) setBestStreakStored(streak); }, [streak, bestStreakStored]);
-
-  const derived = { dayIndex, bestStreak, totalActiveDays };
-
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
-
-  const updateToday = (patch) => {
-    const dk = todayKey();
-    setDays((d) => ({ ...d, [dk]: { ...(d[dk] || emptyDay()), ...patch } }));
+  const api = {
+    openPicker: () => setPicker(true),
+    openSleep: () => setSleepModal(true),
+    startSession: (cat) => setSession({ category: cat }),
+    toggleHabit: (id) => patchDay(todayKey(), { habits: { ...today.habits, [id]: !today.habits[id] } }),
+    addWater: (ml) => patchDay(todayKey(), { water: Math.max(0, today.water + ml) }),
+    saveJournal: (j) => { patchDay(todayKey(), { journal: { ...j, ts: Date.now() } }); showToast("Journal saved."); },
+    updateProfile,
+    addHabit: (name) => { if (!name.trim()) return; updateProfile({ habits: [...state.profile.habits, { id: "c" + Date.now(), name }] }); showToast("Habit added."); },
+    removeHabit: (h) => updateProfile({ habits: state.profile.habits.filter((x) => x.id !== h.id) }),
+    toggleSound: () => setState((s) => ({ ...s, settings: { ...s.settings, sound: !s.settings.sound } })),
+    doExport: () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "winter-arc-data.json"; a.click();
+      URL.revokeObjectURL(url);
+      showToast("Data exported.");
+    },
+    onImport: (e) => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const p = JSON.parse(r.result);
+          if (p && p.profile && p.days && p.settings) { setState(p); showToast("Data imported."); }
+          else showToast("Invalid file.");
+        } catch (err) { showToast("Could not read file."); }
+      };
+      r.readAsText(f);
+      e.target.value = "";
+    },
+    askReset: () => setConfirmState({
+      title: "Reset everything?",
+      body: "This wipes your entire arc — profile, days, journal, achievements. There is no undo.",
+      danger: true, confirmLabel: "Wipe it",
+      onConfirm: () => {
+        try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        setState(defaultState());
+        setPage("today");
+        showToast("Arc reset. Begin again.");
+      },
+    }),
   };
 
-  const toggleHabit = (id) => {
-    const dk = todayKey();
-    setDays((d) => {
-      const cur = d[dk] || emptyDay();
-      const nowChecked = !cur.habits[id];
-      if (nowChecked) showToast("Habit checked ✓");
-      return { ...d, [dk]: { ...cur, habits: { ...cur.habits, [id]: nowChecked } } };
-    });
-  };
-
-  const addHabit = (name) => {
-    setProfile((p) => ({ ...p, habits: [...p.habits, { id: `h_${Date.now()}`, name }] }));
-  };
-
-  const completeWorkout = (category) => {
-    updateToday({ workoutDone: true, workoutCategory: category });
+  const finishWorkout = (category) => {
+    patchDay(todayKey(), { workoutDone: true, workoutCategory: category });
+    setSession(null);
+    if (state.settings.sound) beep(660, 0.12);
     showToast(`${category} logged. +20 XP`);
   };
 
-  const saveJournal = (entry) => {
-    updateToday({ journal: entry });
-    showToast("Journal entry saved");
-  };
-
-  const toggleChallenge = (id) => {
-    setChallenges((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
-  };
-
-  const exportData = () => {
-    const payload = { profile, days, arcStartDate, bestStreak: bestStreakStored, xp, challenges };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "winter-arc-data.json"; a.click();
-    URL.revokeObjectURL(url);
-    showToast("Data exported");
-  };
-
-  const resetArc = () => {
-    setDays({});
-    setArcStartDate(new Date().toISOString());
-    setBestStreakStored(0);
-    setChallenges([]);
-    showToast("Winter Arc reset. Day 1 starts now.");
-  };
-
-  const completeOnboarding = (form) => {
-    setProfile(form);
-    setArcStartDate(new Date().toISOString());
-    setView("app");
-    showToast(`Welcome, ${form.name}. Your arc begins.`);
-  };
-
-  if (loading) {
+  if (!state.onboarded && !showOnboarding) {
     return (
-      <div style={{ minHeight: "100vh", background: "#05070A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ animation: "wa-spin 1.6s linear infinite" }}>
-          <Snowflake size={26} color="#79D6FF" />
-        </div>
-      </div>
+      <>
+        <Landing
+          onStart={() => setShowOnboarding(true)}
+          onExplore={() => exploreRef.current && exploreRef.current.scrollIntoView({ behavior: "smooth" })}
+          exploreRef={exploreRef}
+        />
+        <Toast toast={toast} />
+      </>
+    );
+  }
+  if (showOnboarding && !state.onboarded) {
+    return (
+      <Onboarding
+        onCancel={() => setShowOnboarding(false)}
+        onComplete={(profile) => {
+          setState({ ...defaultState(), onboarded: true, profile: { ...profile, startDate: todayKey() } });
+          setShowOnboarding(false);
+          celebrate("THE ARC BEGINS");
+        }}
+      />
     );
   }
 
+  const pageProps = { state, stats, api };
+  const PageComp = { today: TodayPage, train: TrainPage, progress: ProgressPage, journal: JournalPage, challenges: ChallengesPage, awards: AwardsPage, settings: SettingsPage }[page];
+  const xpInto = stats.xp % XP_PER_LEVEL;
+
   return (
-    <div style={{ minHeight: "100vh", background: "#05070A", color: "#EAF4FB", fontFamily: "'Inter',sans-serif", position: "relative" }}>
-      {view === "landing" && (
-        <Landing onStart={() => setView("onboarding")} onExplore={() => exploreRef.current?.scrollIntoView({ behavior: "smooth" })} exploreRef={exploreRef} />
-      )}
+    <div>
+      <SnowField count={16} />
 
-      {view === "onboarding" && (
-        <Onboarding onComplete={completeOnboarding} onCancel={() => setView("landing")} />
-      )}
-
-      {view === "app" && profile && (
-        <div style={{ display: "flex" }}>
-          <Sidebar page={page} setPage={setPage} profile={profile} streak={streak} setFocusMode={setFocusMode} />
-          <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
-            <SnowField count={16} />
-            <div style={{ position: "relative", zIndex: 1 }}>
-              <Topbar profile={profile} dayIndex={dayIndex} soundOn={soundOn} setSoundOn={setSoundOn} />
-              <div key={page} className="wa-stepfade">
-                {page === "dashboard" && (
-                  <Dashboard profile={profile} today={today} dayIndex={dayIndex} streak={streak} bestStreak={bestStreak} score={score} updateToday={updateToday} setPage={setPage} onLogSleep={() => setSleepModalOpen(true)} />
-                )}
-                {page === "workouts" && <Workouts profile={profile} today={today} completeWorkout={completeWorkout} />}
-                {page === "habits" && <Habits profile={profile} days={days} today={today} toggleHabit={toggleHabit} addHabit={addHabit} />}
-                {page === "progress" && (
-                  <>
-                    <Progress days={days} profile={profile} />
-                    <div style={pagewrap}><Challenges joined={challenges} toggleChallenge={toggleChallenge} /></div>
-                  </>
-                )}
-                {page === "calendar" && <CalendarPage days={days} profile={profile} />}
-                {page === "achievements" && <Achievements derived={derived} xp={xp} level={level} />}
-                {page === "journal" && <Journal days={days} saveJournal={saveJournal} />}
-                {page === "settings" && (
-                  <Settings profile={profile} updateProfile={setProfile} exportData={exportData} resetArc={resetArc} soundOn={soundOn} setSoundOn={setSoundOn} notifOn={notifOn} setNotifOn={setNotifOn} />
-                )}
-              </div>
-            </div>
-          </div>
-          <MobileNav page={page} setPage={setPage} />
+      <aside className="wa-sidebar">
+        <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "4px 10px 20px" }}>
+          <Snowflake size={18} color="#79D6FF" />
+          <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2.5, fontSize: 12.5, color: "#EAF4FB" }}>WINTER ARC</span>
         </div>
-      )}
+        {NAV.map((n) => (
+          <button key={n.id} className={`wa-navitem ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
+            <n.icon size={16} />{n.label}
+          </button>
+        ))}
+        <Glass style={{ padding: 14, marginTop: "auto", borderRadius: 14 }}>
+          <div style={{ fontSize: 10.5, color: "#6E8296", letterSpacing: 1 }}>RANK</div>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13.5, color: "#EAF4FB", marginTop: 3 }}>
+            {RANKS[Math.min(RANKS.length - 1, stats.level - 1)]}
+          </div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 10.5, color: "#8FA4B8", margin: "8px 0 6px" }}>
+            LV {stats.level} · {stats.xp} XP
+          </div>
+          <ProgressBar percent={(xpInto / XP_PER_LEVEL) * 100} height={5} />
+        </Glass>
+      </aside>
 
-      {focusMode && <FocusMode onExit={() => setFocusMode(false)} today={today} dayIndex={dayIndex} />}
+      <nav className="wa-mobilenav">
+        {NAV_MOB.map((id) => {
+          const n = NAV.find((x) => x.id === id);
+          return (
+            <button key={id} className={page === id ? "active" : ""} onClick={() => setPage(id)}>
+              <n.icon size={19} /><span>{n.label}</span>
+            </button>
+          );
+        })}
+      </nav>
 
-      {sleepModalOpen && (
-        <SleepLogModal
-          initial={today.sleep}
-          sleepTarget={profile?.sleepTarget || 8}
-          onClose={() => setSleepModalOpen(false)}
-          onSave={(sleep) => { updateToday({ sleep }); setSleepModalOpen(false); showToast("Sleep logged"); }}
+      <main className="wa-main">
+        <div className="wa-main-inner">
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+            <StatChip icon={Flame} color="#F5B971">{stats.streak}d streak</StatChip>
+            <StatChip icon={Snowflake} color="#8FE1FF">DAY {stats.dayIndex}/{ARC_LENGTH}</StatChip>
+            <StatChip icon={Zap} color="#6EE7C6">{stats.score}% today</StatChip>
+          </div>
+          <PageComp {...pageProps} />
+        </div>
+      </main>
+
+      {picker && (
+        <WorkoutPicker
+          onClose={() => setPicker(false)}
+          onPick={(cat) => { setPicker(false); setSession({ category: cat }); }}
         />
       )}
-
+      {sleepModal && (
+        <SleepModal
+          initial={today.sleep}
+          onClose={() => setSleepModal(false)}
+          onSave={(sleep) => { patchDay(todayKey(), { sleep }); setSleepModal(false); showToast("Sleep logged."); }}
+        />
+      )}
+      {session && (
+        <SessionPlayer
+          category={session.category}
+          def={WORKOUT_LIBRARY[session.category]}
+          prefillDone={today.workoutDone && today.workoutCategory === session.category
+            ? Object.fromEntries(WORKOUT_LIBRARY[session.category].exercises.map((e, i) => [i, Array(e.sets).fill(true)]))
+            : {}}
+          soundOn={state.settings.sound}
+          onFinish={() => finishWorkout(session.category)}
+          onClose={() => setSession(null)}
+        />
+      )}
+      <ConfirmDialog
+        open={!!confirmState}
+        title={confirmState && confirmState.title}
+        body={confirmState && confirmState.body}
+        danger={confirmState && confirmState.danger}
+        confirmLabel={confirmState && confirmState.confirmLabel}
+        onCancel={() => setConfirmState(null)}
+        onConfirm={() => { if (confirmState && confirmState.onConfirm) confirmState.onConfirm(); setConfirmState(null); }}
+      />
       <Toast toast={toast} />
+      {burst && <SnowBurst key={burst.n} title={burst.title} onDone={() => setBurst(null)} />}
     </div>
   );
 }
 
-const root = ReactDOM.createRoot(document.getElementById("root"));
-root.render(<WinterArcApp />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>
