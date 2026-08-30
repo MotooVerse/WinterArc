@@ -1,0 +1,1984 @@
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Snowflake, Flame, Droplets, Moon, Dumbbell, Target, Calendar as CalendarIcon,
+  Trophy, BookOpen, Settings as SettingsIcon, ChevronRight, ChevronLeft, Check, X,
+  Plus, Minus, Play, Pause, SkipForward, RotateCcw, Menu, Home, TrendingUp,
+  Sparkles, Zap, Award, Lock, Volume2, VolumeX, Download, AlertTriangle,
+  ClipboardList, Sunrise, Sun, Sunset, Star, ChevronDown, Edit3, Trash2,
+  CheckCircle2, Circle, MinusCircle, ArrowRight, Info
+} from "lucide-react";
+import {
+  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
+  CartesianGrid, LineChart, Line, PieChart, Pie, Cell
+} from "recharts";
+
+/* ============================================================================
+   CONSTANTS
+============================================================================ */
+
+const ARC_LENGTH = 90;
+const STORAGE_KEY = "winterarc:state:v1";
+
+const FONT_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+`;
+
+const GOAL_OPTIONS = [
+  { id: "general", label: "General Fitness", icon: Dumbbell },
+  { id: "strength", label: "Strength", icon: Flame },
+  { id: "mobility", label: "Mobility", icon: Target },
+  { id: "basketball", label: "Basketball Performance", icon: Zap },
+  { id: "running", label: "Running", icon: TrendingUp },
+  { id: "calisthenics", label: "Calisthenics", icon: Award },
+  { id: "routine", label: "Healthy Routine", icon: Sunrise },
+  { id: "consistency", label: "Consistency", icon: Sparkles },
+];
+
+const EQUIPMENT_OPTIONS = ["Bodyweight only", "Dumbbells", "Resistance bands", "Pull-up bar", "Full gym"];
+const EXPERIENCE_OPTIONS = ["Beginner", "Intermediate", "Advanced"];
+const DAY_OPTIONS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DURATION_OPTIONS = ["20 min", "30 min", "45 min", "60 min", "60+ min"];
+
+const DEFAULT_HABITS = [
+  { id: "workout", name: "Workout" },
+  { id: "water", name: "Drink water" },
+  { id: "sleep", name: "Sleep on time" },
+  { id: "stretch", name: "Stretch" },
+  { id: "read", name: "Read" },
+  { id: "study", name: "Study" },
+  { id: "screen", name: "Limit screen time" },
+  { id: "journal", name: "Journal" },
+  { id: "outdoor", name: "Outdoor activity" },
+];
+
+const WORKOUT_LIBRARY = {
+  "Full Body": { difficulty: "Moderate", duration: 40, muscles: "Full body", exercises: [
+    { name: "Push-ups", sets: 3, reps: "12", rest: 60 },
+    { name: "Bodyweight squats", sets: 3, reps: "15", rest: 60 },
+    { name: "Plank", sets: 3, reps: "40s", rest: 45 },
+    { name: "Reverse lunges", sets: 3, reps: "10/side", rest: 60 },
+    { name: "Superman holds", sets: 3, reps: "12", rest: 45 },
+  ]},
+  "Upper Body": { difficulty: "Moderate", duration: 35, muscles: "Chest, back, arms", exercises: [
+    { name: "Push-ups", sets: 4, reps: "12", rest: 60 },
+    { name: "Pike push-ups", sets: 3, reps: "8", rest: 60 },
+    { name: "Diamond push-ups", sets: 3, reps: "10", rest: 60 },
+    { name: "Tricep dips", sets: 3, reps: "12", rest: 45 },
+  ]},
+  "Lower Body": { difficulty: "Moderate", duration: 35, muscles: "Legs, glutes", exercises: [
+    { name: "Squats", sets: 4, reps: "15", rest: 60 },
+    { name: "Lunges", sets: 3, reps: "12/side", rest: 60 },
+    { name: "Glute bridges", sets: 3, reps: "15", rest: 45 },
+    { name: "Calf raises", sets: 3, reps: "20", rest: 30 },
+  ]},
+  "Core": { difficulty: "Easy", duration: 20, muscles: "Core", exercises: [
+    { name: "Plank", sets: 3, reps: "45s", rest: 45 },
+    { name: "Bicycle crunches", sets: 3, reps: "20", rest: 45 },
+    { name: "Leg raises", sets: 3, reps: "12", rest: 45 },
+    { name: "Side plank", sets: 2, reps: "30s/side", rest: 45 },
+  ]},
+  "Mobility": { difficulty: "Easy", duration: 20, muscles: "Joints, flexibility", exercises: [
+    { name: "World's greatest stretch", sets: 2, reps: "6/side", rest: 30 },
+    { name: "Cat-cow", sets: 2, reps: "10", rest: 20 },
+    { name: "Hip openers", sets: 2, reps: "8/side", rest: 30 },
+    { name: "Shoulder circles", sets: 2, reps: "15", rest: 20 },
+  ]},
+  "Calisthenics": { difficulty: "Hard", duration: 45, muscles: "Full body", exercises: [
+    { name: "Pull-ups", sets: 4, reps: "6", rest: 90 },
+    { name: "Dips", sets: 4, reps: "8", rest: 75 },
+    { name: "Pistol squat practice", sets: 3, reps: "5/side", rest: 75 },
+    { name: "Hollow body hold", sets: 3, reps: "30s", rest: 45 },
+  ]},
+  "Basketball": { difficulty: "Moderate", duration: 40, muscles: "Legs, agility", exercises: [
+    { name: "Lateral bounds", sets: 3, reps: "10/side", rest: 45 },
+    { name: "Box jumps / step-ups", sets: 3, reps: "10", rest: 60 },
+    { name: "Defensive slides", sets: 3, reps: "30s", rest: 45 },
+    { name: "Vertical jump reps", sets: 4, reps: "6", rest: 60 },
+  ]},
+  "Conditioning": { difficulty: "Hard", duration: 25, muscles: "Cardiovascular", exercises: [
+    { name: "Jumping jacks", sets: 4, reps: "40s", rest: 20 },
+    { name: "High knees", sets: 4, reps: "30s", rest: 20 },
+    { name: "Mountain climbers", sets: 4, reps: "30s", rest: 20 },
+    { name: "Burpees", sets: 3, reps: "10", rest: 45 },
+  ]},
+  "Recovery": { difficulty: "Easy", duration: 15, muscles: "Full body", exercises: [
+    { name: "Deep breathing", sets: 1, reps: "3 min", rest: 0 },
+    { name: "Gentle full-body stretch", sets: 1, reps: "10 min", rest: 0 },
+    { name: "Foam rolling", sets: 1, reps: "5 min", rest: 0 },
+  ]},
+};
+
+const ACHIEVEMENT_DEFS = [
+  { id: "first_step", name: "FIRST STEP", desc: "Complete your first day.", check: (s) => s.totalActiveDays >= 1 },
+  { id: "seven_ice", name: "7-DAY ICE", desc: "Maintain a 7-day streak.", check: (s) => s.bestStreak >= 7 },
+  { id: "discipline_mode", name: "DISCIPLINE MODE", desc: "Complete 30 days.", check: (s) => s.totalActiveDays >= 30 },
+  { id: "unbreakable", name: "UNBREAKABLE", desc: "Maintain a 60-day streak.", check: (s) => s.bestStreak >= 60 },
+  { id: "winter_legend", name: "WINTER LEGEND", desc: "Complete the entire arc.", check: (s) => s.dayIndex >= ARC_LENGTH && s.totalActiveDays >= ARC_LENGTH },
+];
+
+const CHALLENGE_DEFS = [
+  { id: "consistency7", name: "7-Day Consistency", desc: "Log any activity 7 days in a row.", days: 7 },
+  { id: "mobility14", name: "14-Day Mobility", desc: "Do a mobility session every other day for 2 weeks.", days: 14 },
+  { id: "workout30", name: "30-Day Workout Consistency", desc: "Complete a workout at least every other day.", days: 30 },
+  { id: "reading30", name: "30-Day Reading", desc: "Read something every day for 30 days.", days: 30 },
+  { id: "hydration7", name: "Hydration Week", desc: "Hit your water goal every day this week.", days: 7 },
+  { id: "morning14", name: "Early Morning Routine", desc: "Log a wake time before 7am for 14 days.", days: 14 },
+];
+
+const QUOTES = [
+  "Show up.", "One day at a time.", "Discipline is built, not found.", "Your arc. Your pace.",
+  "Small reps. Long arc.", "Consistency compounds.", "The work is the reward.",
+];
+
+/* ============================================================================
+   UTILITIES
+============================================================================ */
+
+const pad = (n) => String(n).padStart(2, "0");
+const dateKey = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const todayKey = () => dateKey(new Date());
+const addDays = (d, n) => { const nd = new Date(d); nd.setDate(nd.getDate() + n); return nd; };
+const startOfDay = (d) => { const nd = new Date(d); nd.setHours(0,0,0,0); return nd; };
+const daysBetween = (a, b) => Math.round((startOfDay(b) - startOfDay(a)) / 86400000);
+
+function emptyDay() {
+  return { workoutDone: false, workoutCategory: null, habits: {}, water: 0, sleep: null, journal: null };
+}
+
+function computeDayScore(day, profile) {
+  if (!day) return 0;
+  const workoutScore = day.workoutDone ? 25 : 0;
+  const habitIds = (profile?.habits || []).map((h) => h.id);
+  const total = habitIds.length || 1;
+  const checked = habitIds.filter((id) => day.habits?.[id]).length;
+  const habitsScore = habitIds.length ? Math.round((checked / total) * 25) : 0;
+  const waterGoal = profile?.waterGoal || 2500;
+  const waterScore = Math.min(20, Math.round((day.water / waterGoal) * 20));
+  const sleepTarget = profile?.sleepTarget || 8;
+  const sleepScore = day.sleep?.hours ? Math.min(30, Math.round((day.sleep.hours / sleepTarget) * 30)) : 0;
+  return Math.min(100, workoutScore + habitsScore + waterScore + sleepScore);
+}
+
+function computeStreak(days, profile) {
+  let streak = 0;
+  let cursor = new Date();
+  while (true) {
+    const key = dateKey(cursor);
+    const score = computeDayScore(days[key], profile);
+    if (score > 0) { streak++; cursor = addDays(cursor, -1); }
+    else break;
+  }
+  return streak;
+}
+
+function xpFromState(days, profile) {
+  let xp = 0;
+  Object.values(days).forEach((day) => {
+    if (day.workoutDone) xp += 20;
+    const habitIds = (profile?.habits || []).map((h) => h.id);
+    xp += habitIds.filter((id) => day.habits?.[id]).length * 5;
+    if (day.water >= (profile?.waterGoal || 2500)) xp += 10;
+    if (day.sleep?.hours) xp += 10;
+  });
+  return xp;
+}
+
+function greetingForHour(h) {
+  if (h < 5) return { text: "Still up. Rest matters too.", Icon: Moon };
+  if (h < 12) return { text: "Good morning.", Icon: Sunrise };
+  if (h < 17) return { text: "Good afternoon.", Icon: Sun };
+  if (h < 21) return { text: "Good evening.", Icon: Sunset };
+  return { text: "Winding down.", Icon: Moon };
+}
+
+/* ============================================================================
+   PRIMITIVE UI PIECES
+============================================================================ */
+
+function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    try {
+      const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+      setReduced(mq.matches);
+      const fn = (e) => setReduced(e.matches);
+      mq.addEventListener?.("change", fn);
+      return () => mq.removeEventListener?.("change", fn);
+    } catch (e) {}
+  }, []);
+  return reduced;
+}
+
+function SnowField({ count = 34 }) {
+  const reduced = useReducedMotion();
+  const flakes = useMemo(() => Array.from({ length: count }).map((_, i) => ({
+    id: i,
+    left: Math.random() * 100,
+    size: 2 + Math.random() * 3,
+    dur: 14 + Math.random() * 18,
+    delay: -(Math.random() * 20),
+    drift: (Math.random() - 0.5) * 60,
+    op: 0.15 + Math.random() * 0.35,
+  })), [count]);
+  if (reduced) return null;
+  return (
+    <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
+      {flakes.map((f) => (
+        <span
+          key={f.id}
+          style={{
+            position: "absolute",
+            top: -10,
+            left: `${f.left}%`,
+            width: f.size,
+            height: f.size,
+            borderRadius: "50%",
+            background: "#DCEEFB",
+            opacity: f.op,
+            filter: "blur(0.3px)",
+            animation: `wa-fall ${f.dur}s linear infinite`,
+            animationDelay: `${f.delay}s`,
+            "--drift": `${f.drift}px`,
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes wa-fall {
+          0% { transform: translate(0, -5vh); }
+          100% { transform: translate(var(--drift), 105vh); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function Glass({ children, className = "", style = {}, as: As = "div", ...rest }) {
+  return (
+    <As
+      className={className}
+      style={{
+        background: "rgba(255,255,255,0.045)",
+        border: "1px solid rgba(255,255,255,0.09)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderRadius: 20,
+        ...style,
+      }}
+      {...rest}
+    >
+      {children}
+    </As>
+  );
+}
+
+function ArcRing({ percent = 0, size = 160, stroke = 10, label, sublabel, accentId = "a" }) {
+  const r = (size - stroke) / 2;
+  const c = 2 * Math.PI * r;
+  const gapFraction = 0.22; // the ring is an ARC, not a full circle — leaves a gap at the bottom
+  const usable = c * (1 - gapFraction);
+  const offset = usable - (usable * Math.min(100, Math.max(0, percent))) / 100;
+  const rot = 90 + (360 * gapFraction) / 2;
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <defs>
+          <linearGradient id={`grad-${accentId}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#79D6FF" />
+            <stop offset="100%" stopColor="#5B8CFF" />
+          </linearGradient>
+          <filter id={`glow-${accentId}`}>
+            <feGaussianBlur stdDeviation="4" result="blur" />
+            <feMerge>
+              <feMergeNode in="blur" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+        <circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke}
+          strokeDasharray={`${usable} ${c}`}
+          strokeLinecap="round"
+          transform={`rotate(${rot} ${size / 2} ${size / 2})`}
+        />
+        <motion.circle
+          cx={size / 2} cy={size / 2} r={r}
+          fill="none" stroke={`url(#grad-${accentId})`} strokeWidth={stroke}
+          strokeDasharray={`${usable} ${c}`}
+          strokeLinecap="round"
+          filter={`url(#glow-${accentId})`}
+          transform={`rotate(${rot} ${size / 2} ${size / 2})`}
+          initial={{ strokeDashoffset: usable }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1.1, ease: "easeOut" }}
+        />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
+        {label && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: size * 0.16, color: "#F2F8FC", lineHeight: 1 }}>{label}</div>}
+        {sublabel && <div style={{ fontSize: 11, color: "#7E97AC", marginTop: 4, letterSpacing: 1 }}>{sublabel}</div>}
+      </div>
+    </div>
+  );
+}
+
+function CountUp({ value, duration = 0.8, format = (v) => Math.round(v) }) {
+  const [display, setDisplay] = useState(0);
+  const startRef = useRef(null);
+  const fromRef = useRef(0);
+  useEffect(() => {
+    fromRef.current = display;
+    startRef.current = null;
+    let raf;
+    const step = (ts) => {
+      if (!startRef.current) startRef.current = ts;
+      const t = Math.min(1, (ts - startRef.current) / (duration * 1000));
+      const eased = 1 - Math.pow(1 - t, 3);
+      setDisplay(fromRef.current + (value - fromRef.current) * eased);
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line
+  }, [value]);
+  return <>{format(display)}</>;
+}
+
+function Button({ children, variant = "primary", size = "md", className = "", icon: Icon, ...rest }) {
+  const base = {
+    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+    fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, letterSpacing: 0.4,
+    borderRadius: 12, cursor: "pointer", transition: "all .18s ease", border: "1px solid transparent",
+    whiteSpace: "nowrap",
+  };
+  const sizes = { sm: { padding: "8px 14px", fontSize: 12.5 }, md: { padding: "12px 22px", fontSize: 14 }, lg: { padding: "16px 30px", fontSize: 15.5 } };
+  const variants = {
+    primary: { background: "linear-gradient(135deg, #7FD8FF, #5B8CFF)", color: "#04121F", boxShadow: "0 0 0 1px rgba(127,216,255,0.25), 0 8px 24px -8px rgba(91,140,255,0.55)" },
+    secondary: { background: "rgba(255,255,255,0.06)", color: "#EAF4FB", border: "1px solid rgba(255,255,255,0.14)" },
+    ghost: { background: "transparent", color: "#9FB4C6" },
+    danger: { background: "rgba(255,90,90,0.12)", color: "#FF8A8A", border: "1px solid rgba(255,90,90,0.3)" },
+  };
+  return (
+    <motion.button
+      whileHover={{ y: -1, filter: "brightness(1.06)" }}
+      whileTap={{ y: 0, scale: 0.98 }}
+      style={{ ...base, ...sizes[size], ...variants[variant] }}
+      className={className}
+      {...rest}
+    >
+      {Icon && <Icon size={size === "lg" ? 18 : 15} />}
+      {children}
+    </motion.button>
+  );
+}
+
+function ProgressBar({ percent, color = "linear-gradient(90deg,#79D6FF,#5B8CFF)", height = 8 }) {
+  return (
+    <div style={{ height, borderRadius: height, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
+      <motion.div
+        initial={{ width: 0 }}
+        animate={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
+        transition={{ duration: 0.9, ease: "easeOut" }}
+        style={{ height: "100%", background: color, borderRadius: height }}
+      />
+    </div>
+  );
+}
+
+function ConfirmDialog({ open, title, body, confirmLabel = "Confirm", danger, onConfirm, onCancel }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+          onClick={onCancel}
+        >
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Glass style={{ padding: 28, width: 380, maxWidth: "90vw" }}>
+              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                {danger && <AlertTriangle size={20} color="#FF8A8A" style={{ marginTop: 2, flexShrink: 0 }} />}
+                <div>
+                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{title}</div>
+                  <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8, lineHeight: 1.5 }}>{body}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 22, justifyContent: "flex-end" }}>
+                <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+                <Button variant={danger ? "danger" : "primary"} size="sm" onClick={onConfirm}>{confirmLabel}</Button>
+              </div>
+            </Glass>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function Toast({ toast }) {
+  return (
+    <AnimatePresence>
+      {toast && (
+        <motion.div
+          initial={{ opacity: 0, y: 20, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: 10, x: "-50%" }}
+          style={{ position: "fixed", bottom: 28, left: "50%", zIndex: 300 }}
+        >
+          <Glass style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRadius: 999, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.6)" }}>
+            <CheckCircle2 size={16} color="#6EE7C6" />
+            <span style={{ fontSize: 13.5, color: "#EAF4FB" }}>{toast}</span>
+          </Glass>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function SectionReveal({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 28 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.7, delay, ease: "easeOut" }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function Tooltip2({ label, children }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span style={{ position: "relative" }} onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      <AnimatePresence>
+        {show && (
+          <motion.span
+            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+            style={{ position: "absolute", bottom: "125%", left: "50%", transform: "translateX(-50%)", background: "#101418", border: "1px solid rgba(255,255,255,0.1)", color: "#EAF4FB", fontSize: 11.5, padding: "6px 10px", borderRadius: 8, whiteSpace: "nowrap", zIndex: 50, pointerEvents: "none" }}
+          >
+            {label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+    </span>
+  );
+}
+
+/* ============================================================================
+   LANDING PAGE
+============================================================================ */
+
+function Landing({ onStart, onExplore, exploreRef }) {
+  const [greet] = useState(() => greetingForHour(new Date().getHours()));
+  return (
+    <div style={{ position: "relative" }}>
+      <SnowField count={46} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
+        {/* NAV */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Snowflake size={20} color="#79D6FF" />
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 3, fontSize: 14, color: "#EAF4FB" }}>WINTER ARC</span>
+          </div>
+          <Button variant="secondary" size="sm" onClick={onStart}>Sign In</Button>
+        </div>
+
+        {/* HERO */}
+        <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 50, alignItems: "center", paddingTop: 56, paddingBottom: 60 }} className="wa-hero-grid">
+          <div>
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(127,216,255,0.25)", background: "rgba(127,216,255,0.06)", fontSize: 12, color: "#8FD4FF", marginBottom: 26, letterSpacing: 0.5 }}>
+              <greet.Icon size={13} /> {greet.text}
+            </motion.div>
+            <motion.h1
+              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.05 }}
+              style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: "clamp(40px, 5.4vw, 68px)", lineHeight: 1.02, letterSpacing: -1, color: "#F5FAFD", margin: 0 }}
+            >
+              ENTER YOUR<br /><span style={{ background: "linear-gradient(135deg,#8FE1FF,#5B8CFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>WINTER ARC.</span>
+            </motion.h1>
+            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.15 }}
+              style={{ fontSize: 17, color: "#93A8BB", marginTop: 22, maxWidth: 460, lineHeight: 1.6 }}>
+              Build discipline. Track consistency. Become stronger — one day at a time.
+            </motion.p>
+            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }}
+              style={{ display: "flex", gap: 14, marginTop: 34, flexWrap: "wrap" }}>
+              <Button size="lg" onClick={onStart} icon={ArrowRight}>START YOUR ARC</Button>
+              <Button size="lg" variant="secondary" onClick={onExplore}>EXPLORE THE SYSTEM</Button>
+            </motion.div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }}
+              style={{ display: "flex", gap: 26, marginTop: 46 }}>
+              {[["90", "day arc"], ["9", "habit tracks"], ["100%", "your pace"]].map(([n, l]) => (
+                <div key={l}>
+                  <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#EAF4FB", fontWeight: 700 }}>{n}</div>
+                  <div style={{ fontSize: 11.5, color: "#6E8296", letterSpacing: 0.5, textTransform: "uppercase" }}>{l}</div>
+                </div>
+              ))}
+            </motion.div>
+          </div>
+
+          {/* Hero dashboard preview card */}
+          <motion.div initial={{ opacity: 0, scale: 0.94, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
+            <Glass style={{ padding: 24, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.7)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+                <div style={{ fontSize: 11, letterSpacing: 1.5, color: "#6E8296", textTransform: "uppercase" }}>Live Preview</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#6EE7C6" }}>
+                  <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6EE7C6", display: "inline-block" }} /> Streak active
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 22 }}>
+                <ArcRing percent={20} size={128} stroke={9} label="18/90" sublabel="ARC DAY" accentId="hero" />
+                <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 12 }}>
+                  <MiniStat icon={Flame} label="Streak" value="12 days" />
+                  <MiniStat icon={Droplets} label="Hydration" value="1.8 / 2.5L" />
+                  <MiniStat icon={Moon} label="Sleep" value="7h 40m" />
+                </div>
+              </div>
+              <div style={{ marginTop: 20, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <Glass style={{ padding: 14, borderRadius: 14 }}>
+                  <div style={{ fontSize: 11, color: "#6E8296" }}>Today's Workout</div>
+                  <div style={{ fontSize: 14, color: "#EAF4FB", fontWeight: 600, marginTop: 4 }}>Upper Body</div>
+                </Glass>
+                <Glass style={{ padding: 14, borderRadius: 14 }}>
+                  <div style={{ fontSize: 11, color: "#6E8296" }}>Habits</div>
+                  <div style={{ fontSize: 14, color: "#EAF4FB", fontWeight: 600, marginTop: 4 }}>6 / 9 done</div>
+                </Glass>
+              </div>
+            </Glass>
+          </motion.div>
+        </div>
+
+        {/* FEATURES */}
+        <div ref={exploreRef} style={{ paddingTop: 60, paddingBottom: 30 }}>
+          <SectionReveal>
+            <div style={{ fontSize: 12, letterSpacing: 2, color: "#6E8296", textAlign: "center", marginBottom: 10 }}>THE SYSTEM</div>
+            <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(26px,3vw,36px)", textAlign: "center", color: "#F2F8FC", margin: "0 0 46px" }}>Everything your arc needs.</h2>
+          </SectionReveal>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }} className="wa-feature-grid">
+            {[
+              { icon: Dumbbell, title: "Structured Workouts", desc: "Nine training categories, real sets and reps, an interactive session mode with rest timers." },
+              { icon: Target, title: "Habit Tracking", desc: "Daily checklist, weekly heatmap, streaks — build the routine, not just the workout." },
+              { icon: Droplets, title: "Hydration & Sleep", desc: "Configurable targets. An animated bottle. A sleep graph that values consistency over judgment." },
+              { icon: TrendingUp, title: "Progress Analytics", desc: "Weekly, monthly, and full-arc views of every metric that matters." },
+              { icon: Trophy, title: "Achievements & XP", desc: "Earn discipline XP and unlock milestones — without punishing a missed day." },
+              { icon: BookOpen, title: "Journal", desc: "A minimalist daily reflection. Mood, energy, what worked, what's next." },
+            ].map((f, i) => (
+              <SectionReveal delay={i * 0.05} key={f.title}>
+                <Glass style={{ padding: 26, height: "100%" }}>
+                  <f.icon size={22} color="#79D6FF" />
+                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 600, fontSize: 16, color: "#EAF4FB", marginTop: 16 }}>{f.title}</div>
+                  <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8, lineHeight: 1.55 }}>{f.desc}</div>
+                </Glass>
+              </SectionReveal>
+            ))}
+          </div>
+        </div>
+
+        {/* PHILOSOPHY */}
+        <SectionReveal>
+          <div style={{ padding: "70px 0", textAlign: "center" }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(22px,2.6vw,30px)", color: "#EAF4FB", maxWidth: 640, margin: "0 auto", lineHeight: 1.4 }}>
+              "Discipline is built, not found."
+            </div>
+            <div style={{ fontSize: 13.5, color: "#6E8296", marginTop: 14 }}>Progress over perfection. Consistency over intensity.</div>
+          </div>
+        </SectionReveal>
+
+        <div style={{ textAlign: "center", padding: "20px 0 70px" }}>
+          <Button size="lg" onClick={onStart} icon={Snowflake}>START YOUR ARC</Button>
+        </div>
+
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "22px 0", display: "flex", justifyContent: "space-between", fontSize: 11.5, color: "#5C7082" }}>
+          <span>WINTER ARC</span>
+          <span>Built for consistency, not comparison.</span>
+        </div>
+      </div>
+      <style>{`
+        @media (max-width: 860px) {
+          .wa-hero-grid { grid-template-columns: 1fr !important; }
+          .wa-feature-grid { grid-template-columns: 1fr 1fr !important; }
+        }
+        @media (max-width: 560px) {
+          .wa-feature-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function MiniStat({ icon: Icon, label, value }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+      <div style={{ width: 30, height: 30, borderRadius: 10, background: "rgba(127,216,255,0.09)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <Icon size={14} color="#79D6FF" />
+      </div>
+      <div>
+        <div style={{ fontSize: 10.5, color: "#6E8296" }}>{label}</div>
+        <div style={{ fontSize: 13, color: "#EAF4FB", fontWeight: 600 }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   ONBOARDING
+============================================================================ */
+
+function Onboarding({ onComplete, onCancel }) {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState({
+    name: "", age: "", experience: "Beginner", goals: [], trainingDays: [], duration: "30 min",
+    equipment: [], sleepTarget: 8, waterGoal: 2500, habits: DEFAULT_HABITS.map((h) => h.id),
+  });
+
+  const steps = ["Name", "Experience", "Goals", "Schedule", "Equipment", "Targets", "Habits", "Review"];
+  const toggle = (key, val) => setForm((f) => ({ ...f, [key]: f[key].includes(val) ? f[key].filter((x) => x !== val) : [...f[key], val] }));
+  const canNext = () => {
+    if (step === 0) return form.name.trim().length > 0 && form.age;
+    if (step === 2) return form.goals.length > 0;
+    if (step === 3) return form.trainingDays.length > 0;
+    if (step === 4) return form.equipment.length > 0;
+    return true;
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "#05070A", overflow: "auto" }}>
+      <SnowField count={20} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 640, margin: "0 auto", padding: "40px 24px 80px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 36 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Snowflake size={17} color="#79D6FF" />
+            <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2.5, fontSize: 12.5, color: "#EAF4FB" }}>WINTER ARC</span>
+          </div>
+          <button onClick={onCancel} style={{ background: "none", border: "none", color: "#5C7082", cursor: "pointer" }}><X size={18} /></button>
+        </div>
+
+        <div style={{ display: "flex", gap: 6, marginBottom: 40 }}>
+          {steps.map((_, i) => (
+            <div key={i} style={{ flex: 1, height: 3, borderRadius: 3, background: i <= step ? "linear-gradient(90deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.08)", transition: "background .3s" }} />
+          ))}
+        </div>
+
+        <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 10 }}>STEP {step + 1} OF {steps.length}</div>
+
+        <AnimatePresence mode="wait">
+          <motion.div key={step} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }}>
+            {step === 0 && (
+              <div>
+                <h2 style={qh}>What should we call you?</h2>
+                <input placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={qinput} />
+                <div style={{ height: 14 }} />
+                <input placeholder="Age" type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} style={qinput} />
+              </div>
+            )}
+            {step === 1 && (
+              <div>
+                <h2 style={qh}>What's your fitness experience?</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {EXPERIENCE_OPTIONS.map((opt) => (
+                    <Chip key={opt} selected={form.experience === opt} onClick={() => setForm({ ...form, experience: opt })} label={opt} wide />
+                  ))}
+                </div>
+              </div>
+            )}
+            {step === 2 && (
+              <div>
+                <h2 style={qh}>What are your main goals?</h2>
+                <p style={qsub}>Select as many as apply.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {GOAL_OPTIONS.map((g) => (
+                    <Chip key={g.id} selected={form.goals.includes(g.id)} onClick={() => toggle("goals", g.id)} label={g.label} icon={g.icon} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {step === 3 && (
+              <div>
+                <h2 style={qh}>Which days can you train?</h2>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
+                  {DAY_OPTIONS.map((d) => (
+                    <Chip key={d} selected={form.trainingDays.includes(d)} onClick={() => toggle("trainingDays", d)} label={d} compact />
+                  ))}
+                </div>
+                <h3 style={{ ...qh, fontSize: 16, marginBottom: 12 }}>Preferred session length</h3>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  {DURATION_OPTIONS.map((d) => (
+                    <Chip key={d} selected={form.duration === d} onClick={() => setForm({ ...form, duration: d })} label={d} compact />
+                  ))}
+                </div>
+              </div>
+            )}
+            {step === 4 && (
+              <div>
+                <h2 style={qh}>What equipment do you have?</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {EQUIPMENT_OPTIONS.map((e) => (
+                    <Chip key={e} selected={form.equipment.includes(e)} onClick={() => toggle("equipment", e)} label={e} wide />
+                  ))}
+                </div>
+              </div>
+            )}
+            {step === 5 && (
+              <div>
+                <h2 style={qh}>Set your daily targets</h2>
+                <p style={qsub}>These are starting points — adjust anytime in Settings.</p>
+                <div style={{ marginBottom: 26 }}>
+                  <div style={qlabel}>Sleep target: {form.sleepTarget}h</div>
+                  <input type="range" min="5" max="10" step="0.5" value={form.sleepTarget} onChange={(e) => setForm({ ...form, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+                </div>
+                <div>
+                  <div style={qlabel}>Water goal: {(form.waterGoal / 1000).toFixed(1)}L</div>
+                  <input type="range" min="1500" max="4000" step="250" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+                </div>
+              </div>
+            )}
+            {step === 6 && (
+              <div>
+                <h2 style={qh}>Which habits matter to you?</h2>
+                <p style={qsub}>You can add custom habits later.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  {DEFAULT_HABITS.map((h) => (
+                    <Chip key={h.id} selected={form.habits.includes(h.id)} onClick={() => toggle("habits", h.id)} label={h.name} />
+                  ))}
+                </div>
+              </div>
+            )}
+            {step === 7 && (
+              <div>
+                <h2 style={qh}>Your Winter Arc is ready, {form.name || "there"}.</h2>
+                <p style={qsub}>A 90-day arc begins the moment you confirm.</p>
+                <Glass style={{ padding: 20, marginTop: 10 }}>
+                  <ReviewRow label="Experience" value={form.experience} />
+                  <ReviewRow label="Goals" value={form.goals.map((g) => GOAL_OPTIONS.find((o) => o.id === g)?.label).join(", ")} />
+                  <ReviewRow label="Training days" value={form.trainingDays.join(", ")} />
+                  <ReviewRow label="Session length" value={form.duration} />
+                  <ReviewRow label="Sleep target" value={`${form.sleepTarget}h`} />
+                  <ReviewRow label="Water goal" value={`${(form.waterGoal / 1000).toFixed(1)}L`} />
+                  <ReviewRow label="Habits" value={`${form.habits.length} selected`} last />
+                </Glass>
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+
+        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40 }}>
+          <Button variant="ghost" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))} icon={ChevronLeft}>{step === 0 ? "Cancel" : "Back"}</Button>
+          {step < steps.length - 1 ? (
+            <Button onClick={() => canNext() && setStep(step + 1)} style={{ opacity: canNext() ? 1 : 0.5 }}>Continue</Button>
+          ) : (
+            <Button icon={Sparkles} onClick={() => onComplete({ ...form, habits: DEFAULT_HABITS.filter((h) => form.habits.includes(h.id)) })}>ENTER THE ARC</Button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const qh = { fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: "#F2F8FC", margin: "0 0 8px" };
+const qsub = { fontSize: 13.5, color: "#8FA4B8", margin: "0 0 22px" };
+const qlabel = { fontSize: 12.5, color: "#9FB4C6", marginBottom: 10 };
+const qinput = { width: "100%", boxSizing: "border-box", padding: "14px 16px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "#EAF4FB", fontSize: 15, outline: "none", fontFamily: "'Inter',sans-serif" };
+
+function ReviewRow({ label, value, last }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 0", borderBottom: last ? "none" : "1px solid rgba(255,255,255,0.06)" }}>
+      <span style={{ fontSize: 12.5, color: "#6E8296" }}>{label}</span>
+      <span style={{ fontSize: 13, color: "#EAF4FB", textAlign: "right", maxWidth: "65%" }}>{value || "—"}</span>
+    </div>
+  );
+}
+
+function Chip({ selected, onClick, label, icon: Icon, wide, compact }) {
+  return (
+    <motion.button
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 8, justifyContent: compact ? "center" : "flex-start",
+        padding: compact ? "10px 16px" : "13px 16px", borderRadius: 12, cursor: "pointer",
+        background: selected ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
+        border: selected ? "1px solid rgba(127,216,255,0.5)" : "1px solid rgba(255,255,255,0.09)",
+        color: selected ? "#8FE1FF" : "#B9C7D3", fontSize: 13.5, fontFamily: "'Inter',sans-serif",
+        width: wide ? "100%" : "auto", boxSizing: "border-box", transition: "all .15s",
+      }}
+    >
+      {Icon && <Icon size={15} />}
+      {label}
+      {selected && !Icon && <Check size={13} style={{ marginLeft: "auto" }} />}
+    </motion.button>
+  );
+}
+
+/* ============================================================================
+   APP SHELL
+============================================================================ */
+
+const NAV_ITEMS = [
+  { id: "dashboard", label: "Dashboard", icon: Home },
+  { id: "workouts", label: "Workouts", icon: Dumbbell },
+  { id: "habits", label: "Habits", icon: Target },
+  { id: "progress", label: "Progress", icon: TrendingUp },
+  { id: "calendar", label: "Calendar", icon: CalendarIcon },
+  { id: "achievements", label: "Achievements", icon: Trophy },
+  { id: "journal", label: "Journal", icon: BookOpen },
+  { id: "settings", label: "Settings", icon: SettingsIcon },
+];
+const MOBILE_NAV_IDS = ["dashboard", "workouts", "habits", "progress", "settings"];
+
+function Sidebar({ page, setPage, profile, streak, focusMode, setFocusMode }) {
+  return (
+    <div style={{ width: 236, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "26px 16px", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0 }} className="wa-sidebar">
+      <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 10px", marginBottom: 30 }}>
+        <Snowflake size={18} color="#79D6FF" />
+        <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2, fontSize: 13, color: "#EAF4FB" }}>WINTER ARC</span>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 3, flex: 1 }}>
+        {NAV_ITEMS.map((item) => {
+          const active = page === item.id;
+          return (
+            <button key={item.id} onClick={() => setPage(item.id)}
+              style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 11, border: "none", cursor: "pointer",
+                background: active ? "rgba(127,216,255,0.1)" : "transparent", color: active ? "#8FE1FF" : "#8399AC",
+                fontSize: 13.5, fontFamily: "'Inter',sans-serif", fontWeight: active ? 600 : 500, textAlign: "left", transition: "all .15s",
+                position: "relative",
+              }}
+            >
+              {active && <motion.div layoutId="navactive" style={{ position: "absolute", left: 0, top: 6, bottom: 6, width: 3, borderRadius: 3, background: "linear-gradient(180deg,#79D6FF,#5B8CFF)" }} />}
+              <item.icon size={16} /> {item.label}
+            </button>
+          );
+        })}
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <button onClick={() => setFocusMode(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 11, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9FB4C6", fontSize: 12.5, cursor: "pointer" }}>
+          <Zap size={14} /> Focus Mode
+        </button>
+        <Glass style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+          <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#79D6FF,#5B8CFF)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#04121F" }}>
+            {(profile.name || "?").slice(0, 1).toUpperCase()}
+          </div>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: 12.5, color: "#EAF4FB", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{profile.name}</div>
+            <div style={{ fontSize: 11, color: "#6E8296", display: "flex", alignItems: "center", gap: 4 }}><Flame size={11} color="#F5B971" /> {streak} day streak</div>
+          </div>
+        </Glass>
+      </div>
+    </div>
+  );
+}
+
+function MobileNav({ page, setPage }) {
+  return (
+    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, display: "none" }} className="wa-mobilenav">
+      <Glass style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none", display: "flex", justifyContent: "space-around", padding: "10px 4px calc(10px + env(safe-area-inset-bottom))" }}>
+        {MOBILE_NAV_IDS.map((id) => {
+          const item = NAV_ITEMS.find((n) => n.id === id);
+          const active = page === id;
+          return (
+            <button key={id} onClick={() => setPage(id)} style={{ background: "none", border: "none", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, color: active ? "#8FE1FF" : "#647890", cursor: "pointer", padding: "4px 8px" }}>
+              <item.icon size={19} />
+              <span style={{ fontSize: 9.5 }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </Glass>
+    </div>
+  );
+}
+
+function Topbar({ profile, dayIndex, onQuickWater, soundOn, setSoundOn }) {
+  const greet = greetingForHour(new Date().getHours());
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", position: "sticky", top: 0, zIndex: 20, background: "linear-gradient(180deg, rgba(6,8,11,0.92), rgba(6,8,11,0.75) 70%, transparent)", backdropFilter: "blur(10px)" }} className="wa-topbar">
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#7E97AC" }}><greet.Icon size={13} /> {greet.text}</div>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 20, color: "#F2F8FC", marginTop: 2 }}>{profile.name}</div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+        <div style={{ fontSize: 11.5, color: "#6E8296", display: "none" }} className="wa-daylabel">ARC DAY {Math.min(dayIndex, ARC_LENGTH)} / {ARC_LENGTH}</div>
+        <button onClick={() => setSoundOn((s) => !s)} title="Toggle sound feedback" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", color: "#9FB4C6", cursor: "pointer" }}>
+          {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   DASHBOARD
+============================================================================ */
+
+function Dashboard({ state, profile, today, dayIndex, streak, bestStreak, score, updateToday, setPage, onLogSleep }) {
+  const habitsTotal = profile.habits.length;
+  const habitsDone = profile.habits.filter((h) => today.habits[h.id]).length;
+
+  return (
+    <div style={pagewrap}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }} className="wa-dash-top">
+        <Glass style={{ padding: 26 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 20 }}>
+            <div>
+              <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 8 }}>WINTER ARC PROGRESS</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 34, color: "#F2F8FC" }}>
+                DAY <CountUp value={Math.min(dayIndex, ARC_LENGTH)} /> / {ARC_LENGTH}
+              </div>
+              <div style={{ fontSize: 13, color: "#79D6FF", marginTop: 4, fontWeight: 600 }}>{Math.round((Math.min(dayIndex, ARC_LENGTH) / ARC_LENGTH) * 100)}% complete</div>
+              <div style={{ display: "flex", gap: 22, marginTop: 22 }}>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#EAF4FB", display: "flex", alignItems: "center", gap: 6 }}><Flame size={16} color="#F5B971" /> {streak}</div>
+                  <div style={{ fontSize: 11, color: "#6E8296" }}>Current streak</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: "#EAF4FB" }}>{bestStreak}</div>
+                  <div style={{ fontSize: 11, color: "#6E8296" }}>Best streak</div>
+                </div>
+              </div>
+            </div>
+            <ArcRing percent={(Math.min(dayIndex, ARC_LENGTH) / ARC_LENGTH) * 100} size={140} stroke={10} label={`${Math.min(dayIndex, ARC_LENGTH)}/${ARC_LENGTH}`} sublabel="ARC" accentId="dash" />
+          </div>
+        </Glass>
+
+        <Glass style={{ padding: 26, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+          <div>
+            <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 8 }}>WINTER SCORE</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 40, color: "#F2F8FC" }}><CountUp value={score} /></span>
+              <span style={{ fontSize: 15, color: "#6E8296" }}>/ 100</span>
+            </div>
+          </div>
+          <ProgressBar percent={score} />
+          <div style={{ fontSize: 11.5, color: "#5C7082", marginTop: 10, lineHeight: 1.4 }}>A motivational snapshot of today — not a measure of your worth.</div>
+        </Glass>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginTop: 18 }} className="wa-dash-grid">
+        <Glass style={{ padding: 22 }}>
+          <div style={cardHead}><Dumbbell size={15} color="#79D6FF" /> Today's Workout</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{today.workoutCategory || "Not scheduled"}</div>
+          <div style={{ marginTop: 14 }}>
+            {today.workoutDone ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#6EE7C6", fontSize: 12.5 }}><CheckCircle2 size={15} /> Completed today</div>
+            ) : (
+              <Button size="sm" onClick={() => setPage("workouts")} icon={Play}>Start Workout</Button>
+            )}
+          </div>
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={cardHead}><Target size={15} color="#79D6FF" /> Habits</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{habitsDone} / {habitsTotal} done</div>
+          <ProgressBar percent={(habitsDone / (habitsTotal || 1)) * 100} height={6} />
+          <div style={{ marginTop: 12 }}><Button size="sm" variant="secondary" onClick={() => setPage("habits")}>Open checklist</Button></div>
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={cardHead}><Droplets size={15} color="#79D6FF" /> Hydration</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 8 }}>
+            <WaterBottle percent={(today.water / profile.waterGoal) * 100} />
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: "#EAF4FB" }}>{(today.water / 1000).toFixed(2)}L</div>
+              <div style={{ fontSize: 11.5, color: "#6E8296" }}>of {(profile.waterGoal / 1000).toFixed(1)}L goal</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+            <Button size="sm" variant="secondary" onClick={() => updateToday({ water: Math.min(profile.waterGoal * 1.5, today.water + 250) })}>+250ml</Button>
+            <Button size="sm" variant="secondary" onClick={() => updateToday({ water: Math.min(profile.waterGoal * 1.5, today.water + 500) })}>+500ml</Button>
+          </div>
+        </Glass>
+
+        <Glass style={{ padding: 22 }}>
+          <div style={cardHead}><Moon size={15} color="#79D6FF" /> Sleep</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#EAF4FB", marginTop: 10 }}>{today.sleep?.hours ? `${today.sleep.hours}h logged` : "Not logged"}</div>
+          <div style={{ marginTop: 12 }}><Button size="sm" variant="secondary" onClick={onLogSleep}>Log sleep</Button></div>
+        </Glass>
+      </div>
+
+      <QuoteStrip />
+    </div>
+  );
+}
+
+function QuoteStrip() {
+  const [q] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+  return (
+    <div style={{ marginTop: 22, textAlign: "center", padding: "26px 0", fontFamily: "'Space Grotesk',sans-serif", fontSize: 15, letterSpacing: 1, color: "#5C7082" }}>
+      "{q}"
+    </div>
+  );
+}
+
+const pagewrap = { padding: "8px 28px 100px", maxWidth: 1180, margin: "0 auto" };
+const cardHead = { display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: "#8FA4B8", letterSpacing: 0.3 };
+
+/* ============================================================================
+   WORKOUTS
+============================================================================ */
+
+function Workouts({ profile, today, updateToday, completeWorkout }) {
+  const [active, setActive] = useState(null); // category name for session
+  const categories = Object.keys(WORKOUT_LIBRARY);
+
+  if (active) {
+    return <WorkoutSession category={active} onExit={() => setActive(null)} onFinish={() => { completeWorkout(active); setActive(null); }} />;
+  }
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Workouts" subtitle="Pick a category. Every session includes sets, reps, rest, and an interactive mode." />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="wa-workout-grid">
+        {categories.map((cat) => {
+          const w = WORKOUT_LIBRARY[cat];
+          const doneToday = today.workoutDone && today.workoutCategory === cat;
+          return (
+            <Glass key={cat} style={{ padding: 22, display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{cat}</div>
+                {doneToday && <CheckCircle2 size={17} color="#6EE7C6" />}
+              </div>
+              <div style={{ fontSize: 12, color: "#6E8296", marginTop: 6 }}>{w.muscles} · {w.difficulty} · ~{w.duration} min</div>
+              <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+                {w.exercises.slice(0, 3).map((ex) => (
+                  <div key={ex.name} style={{ fontSize: 12.5, color: "#8FA4B8", display: "flex", justifyContent: "space-between" }}>
+                    <span>{ex.name}</span><span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6E8296" }}>{ex.sets}×{ex.reps}</span>
+                  </div>
+                ))}
+                {w.exercises.length > 3 && <div style={{ fontSize: 11.5, color: "#5C7082" }}>+{w.exercises.length - 3} more</div>}
+              </div>
+              <div style={{ marginTop: 18 }}>
+                <Button size="sm" onClick={() => setActive(cat)} icon={Play}>{doneToday ? "Do again" : "Start"}</Button>
+              </div>
+            </Glass>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function WorkoutSession({ category, onExit, onFinish }) {
+  const w = WORKOUT_LIBRARY[category];
+  const [idx, setIdx] = useState(0);
+  const [phase, setPhase] = useState("exercise"); // exercise | resting | done
+  const [restLeft, setRestLeft] = useState(0);
+  const [completedSets, setCompletedSets] = useState({});
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (phase === "resting" && restLeft > 0) {
+      timerRef.current = setTimeout(() => setRestLeft((r) => r - 1), 1000);
+    } else if (phase === "resting" && restLeft === 0) {
+      setPhase("exercise");
+    }
+    return () => clearTimeout(timerRef.current);
+  }, [phase, restLeft]);
+
+  const ex = w.exercises[idx];
+  const key = `${idx}`;
+  const setsDone = completedSets[key] || 0;
+
+  const completeSet = () => {
+    const next = setsDone + 1;
+    setCompletedSets((c) => ({ ...c, [key]: next }));
+    if (next >= ex.sets) {
+      if (idx < w.exercises.length - 1) {
+        setIdx(idx + 1);
+        if (ex.rest > 0) { setPhase("resting"); setRestLeft(ex.rest); } else setPhase("exercise");
+      } else {
+        setPhase("done");
+      }
+    } else {
+      if (ex.rest > 0) { setPhase("resting"); setRestLeft(ex.rest); } else setPhase("exercise");
+    }
+  };
+
+  const skip = () => {
+    if (idx < w.exercises.length - 1) { setIdx(idx + 1); setPhase("exercise"); }
+    else setPhase("done");
+  };
+
+  if (phase === "done") {
+    return (
+      <div style={pagewrap}>
+        <Glass style={{ padding: 50, textAlign: "center", maxWidth: 480, margin: "60px auto" }}>
+          <Trophy size={36} color="#F5B971" style={{ margin: "0 auto" }} />
+          <h2 style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: 24, color: "#F2F8FC", marginTop: 18 }}>{category} complete.</h2>
+          <p style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8 }}>Logged to today. +20 discipline XP.</p>
+          <div style={{ marginTop: 26 }}><Button onClick={onFinish} icon={Check}>Done</Button></div>
+        </Glass>
+      </div>
+    );
+  }
+
+  return (
+    <div style={pagewrap}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 22 }}>
+        <button onClick={onExit} style={{ background: "none", border: "none", color: "#8FA4B8", display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 13 }}><ChevronLeft size={16} /> Exit session</button>
+        <div style={{ fontSize: 12, color: "#6E8296" }}>{idx + 1} / {w.exercises.length}</div>
+      </div>
+      <Glass style={{ padding: 40, maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
+        <AnimatePresence mode="wait">
+          {phase === "resting" ? (
+            <motion.div key="rest" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>REST</div>
+              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 64, color: "#79D6FF", margin: "16px 0" }}>{restLeft}s</div>
+              <ProgressBar percent={(1 - restLeft / (ex.rest || 1)) * 100} />
+              <div style={{ marginTop: 24 }}><Button variant="secondary" size="sm" onClick={() => setPhase("exercise")}>Skip rest</Button></div>
+            </motion.div>
+          ) : (
+            <motion.div key={`ex-${idx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+              <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>EXERCISE</div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 30, color: "#F2F8FC", margin: "10px 0" }}>{ex.name}</div>
+              <div style={{ fontSize: 15, color: "#79D6FF", fontFamily: "'JetBrains Mono',monospace" }}>Set {setsDone + 1} of {ex.sets} · {ex.reps}</div>
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
+                <Button onClick={completeSet} icon={Check}>COMPLETE SET</Button>
+                <Button variant="secondary" onClick={skip} icon={SkipForward}>SKIP</Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </Glass>
+    </div>
+  );
+}
+
+/* ============================================================================
+   HABITS
+============================================================================ */
+
+function Habits({ profile, days, today, toggleHabit, addHabit, removeHabit }) {
+  const [newHabit, setNewHabit] = useState("");
+  const last7 = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(new Date(), -6 + i)), []);
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Habits" subtitle="Check off today. Watch the streak build." />
+      <Glass style={{ padding: 22, marginBottom: 18 }}>
+        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>TODAY</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {profile.habits.map((h) => {
+            const checked = !!today.habits[h.id];
+            return (
+              <button key={h.id} onClick={() => toggleHabit(h.id)} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 10px", background: "none", border: "none", cursor: "pointer", borderRadius: 10, textAlign: "left" }}>
+                {checked ? <CheckCircle2 size={19} color="#6EE7C6" /> : <Circle size={19} color="#425466" />}
+                <span style={{ fontSize: 14, color: checked ? "#EAF4FB" : "#9FB4C6", textDecoration: checked ? "line-through" : "none", textDecorationColor: "rgba(234,244,251,0.3)" }}>{h.name}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+          <input value={newHabit} onChange={(e) => setNewHabit(e.target.value)} placeholder="Add a custom habit" style={{ ...qinput, padding: "10px 14px", fontSize: 13.5 }} />
+          <Button size="sm" icon={Plus} onClick={() => { if (newHabit.trim()) { addHabit(newHabit.trim()); setNewHabit(""); } }}>Add</Button>
+        </div>
+      </Glass>
+
+      <Glass style={{ padding: 22 }}>
+        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 16 }}>WEEKLY HEATMAP</div>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 480 }}>
+            <thead>
+              <tr>
+                <td style={{ width: 130 }} />
+                {last7.map((d) => <th key={dateKey(d)} style={{ fontSize: 10.5, color: "#6E8296", fontWeight: 500, padding: "0 4px 8px" }}>{d.toLocaleDateString(undefined, { weekday: "short" })}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {profile.habits.map((h) => (
+                <tr key={h.id}>
+                  <td style={{ fontSize: 12.5, color: "#9FB4C6", padding: "6px 10px 6px 0" }}>{h.name}</td>
+                  {last7.map((d) => {
+                    const dk = dateKey(d);
+                    const done = !!days[dk]?.habits?.[h.id];
+                    return (
+                      <td key={dk} style={{ padding: 4, textAlign: "center" }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 6, margin: "0 auto", background: done ? "linear-gradient(135deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.06)" }} />
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Glass>
+    </div>
+  );
+}
+
+/* ============================================================================
+   WATER / SLEEP inline within a combined "Vitals" — kept in Dashboard quick actions,
+   full pages accessible via Progress; standalone pages below for completeness.
+============================================================================ */
+
+function WaterBottle({ percent }) {
+  const h = 140;
+  const fillH = Math.min(100, Math.max(0, percent)) / 100 * (h - 14);
+  return (
+    <svg width="70" height={h + 10} viewBox={`0 0 70 ${h + 10}`}>
+      <defs>
+        <clipPath id="bottleClip"><rect x="14" y="8" width="42" height={h - 8} rx="14" /></clipPath>
+        <linearGradient id="waterGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#8FE1FF" />
+          <stop offset="100%" stopColor="#3E7CB1" />
+        </linearGradient>
+      </defs>
+      <rect x="26" y="0" width="18" height="12" rx="4" fill="rgba(255,255,255,0.15)" />
+      <rect x="14" y="8" width="42" height={h - 8} rx="14" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
+      <g clipPath="url(#bottleClip)">
+        <motion.rect x="14" width="42" height={fillH} fill="url(#waterGrad)"
+          initial={{ y: h + 8 }} animate={{ y: h - fillH + 8 }} transition={{ duration: 1, ease: "easeOut" }} />
+      </g>
+    </svg>
+  );
+}
+
+function SleepLogModal({ initial, sleepTarget, onSave, onClose }) {
+  const [bedtime, setBedtime] = useState(initial?.bedtime || "23:00");
+  const [wake, setWake] = useState(initial?.wake || "07:00");
+  const [quality, setQuality] = useState(initial?.quality || 3);
+
+  const hours = useMemo(() => {
+    const [bh, bm] = bedtime.split(":").map(Number);
+    const [wh, wm] = wake.split(":").map(Number);
+    let mins = (wh * 60 + wm) - (bh * 60 + bm);
+    if (mins <= 0) mins += 24 * 60;
+    return Math.round((mins / 60) * 10) / 10;
+  }, [bedtime, wake]);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.94, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+        <Glass style={{ padding: 28, width: 400, maxWidth: "90vw" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>Log sleep</div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+            <div>
+              <div style={qlabel}>Bedtime</div>
+              <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
+            </div>
+            <div>
+              <div style={qlabel}>Wake time</div>
+              <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <div style={qlabel}>Sleep quality: {["Poor", "Rough", "Okay", "Good", "Great"][quality - 1]}</div>
+            <input type="range" min="1" max="5" value={quality} onChange={(e) => setQuality(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
+          </div>
+          <Glass style={{ padding: 14, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12.5, color: "#8FA4B8" }}>Total sleep</span>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, color: "#79D6FF", fontWeight: 700 }}>{hours}h</span>
+          </Glass>
+          <div style={{ fontSize: 11.5, color: "#5C7082", marginBottom: 18, lineHeight: 1.4 }}>Sleep needs vary. Consistency matters more than any single number — target is {sleepTarget}h.</div>
+          <Button onClick={() => onSave({ bedtime, wake, hours, quality })} icon={Check}>Save sleep log</Button>
+        </Glass>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ============================================================================
+   PROGRESS ANALYTICS
+============================================================================ */
+
+function Progress({ days, profile }) {
+  const [range, setRange] = useState("week");
+  const rangeDays = range === "week" ? 7 : range === "month" ? 30 : ARC_LENGTH;
+
+  const chartData = useMemo(() => {
+    return Array.from({ length: rangeDays }).map((_, i) => {
+      const d = addDays(new Date(), -(rangeDays - 1) + i);
+      const dk = dateKey(d);
+      const day = days[dk] || emptyDay();
+      return {
+        label: rangeDays <= 7 ? d.toLocaleDateString(undefined, { weekday: "short" }) : `${d.getMonth() + 1}/${d.getDate()}`,
+        score: computeDayScore(day, profile),
+        water: Math.round((day.water / 1000) * 100) / 100,
+        sleep: day.sleep?.hours || 0,
+        habits: Object.values(day.habits || {}).filter(Boolean).length,
+      };
+    });
+  }, [days, profile, rangeDays]);
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Progress" subtitle="Consistency across every metric that matters." />
+      <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+        {[["week", "THIS WEEK"], ["month", "THIS MONTH"], ["arc", "WINTER ARC"]].map(([id, label]) => (
+          <button key={id} onClick={() => setRange(id)} style={{
+            padding: "8px 16px", borderRadius: 10, fontSize: 12, cursor: "pointer",
+            background: range === id ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
+            border: range === id ? "1px solid rgba(127,216,255,0.4)" : "1px solid rgba(255,255,255,0.08)",
+            color: range === id ? "#8FE1FF" : "#8FA4B8",
+          }}>{label}</button>
+        ))}
+      </div>
+
+      <Glass style={{ padding: 22, marginBottom: 16 }}>
+        <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>WINTER SCORE TREND</div>
+        <ResponsiveContainer width="100%" height={220}>
+          <AreaChart data={chartData}>
+            <defs>
+              <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#79D6FF" stopOpacity={0.5} />
+                <stop offset="100%" stopColor="#79D6FF" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+            <XAxis dataKey="label" stroke="#5C7082" fontSize={11} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 8) : 0} />
+            <YAxis stroke="#5C7082" fontSize={11} tickLine={false} axisLine={false} width={28} />
+            <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
+            <Area type="monotone" dataKey="score" stroke="#79D6FF" fill="url(#scoreGrad)" strokeWidth={2} />
+          </AreaChart>
+        </ResponsiveContainer>
+      </Glass>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="wa-progress-grid">
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>HYDRATION (L)</div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={chartData}>
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+              <XAxis dataKey="label" stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 6) : 0} />
+              <YAxis stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} width={26} />
+              <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
+              <Bar dataKey="water" fill="#5B8CFF" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Glass>
+        <Glass style={{ padding: 22 }}>
+          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>SLEEP (HOURS)</div>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={chartData}>
+              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
+              <XAxis dataKey="label" stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 6) : 0} />
+              <YAxis stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} width={26} />
+              <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
+              <Bar dataKey="sleep" fill="#8FE1FF" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Glass>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   CALENDAR
+============================================================================ */
+
+function CalendarPage({ days, profile, arcStartDate }) {
+  const [monthOffset, setMonthOffset] = useState(0);
+  const [selected, setSelected] = useState(null);
+  const base = new Date(); base.setMonth(base.getMonth() + monthOffset); base.setDate(1);
+  const year = base.getFullYear(), month = base.getMonth();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+
+  const stateFor = (d) => {
+    const dk = dateKey(d);
+    const score = computeDayScore(days[dk], profile);
+    if (d > new Date()) return "future";
+    if (score >= 60) return "complete";
+    if (score > 0) return "partial";
+    return "rest";
+  };
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Calendar" subtitle="Every day of your arc, at a glance." />
+      <Glass style={{ padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+          <button onClick={() => setMonthOffset((m) => m - 1)} style={navBtn}><ChevronLeft size={16} /></button>
+          <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: "#EAF4FB" }}>{base.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
+          <button onClick={() => setMonthOffset((m) => m + 1)} style={navBtn}><ChevronRight size={16} /></button>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 8 }}>
+          {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 10.5, color: "#5C7082" }}>{d}</div>)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6 }}>
+          {cells.map((d, i) => {
+            if (!d) return <div key={i} />;
+            const st = stateFor(d);
+            const isToday = dateKey(d) === todayKey();
+            const colors = { complete: "rgba(110,231,198,0.18)", partial: "rgba(245,185,113,0.16)", rest: "rgba(255,255,255,0.03)", future: "transparent" };
+            const borders = { complete: "1px solid rgba(110,231,198,0.4)", partial: "1px solid rgba(245,185,113,0.35)", rest: "1px solid rgba(255,255,255,0.06)", future: "1px solid rgba(255,255,255,0.03)" };
+            return (
+              <button key={i} onClick={() => st !== "future" && setSelected(d)} style={{
+                aspectRatio: "1", borderRadius: 10, background: colors[st], border: isToday ? "1px solid #79D6FF" : borders[st],
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: st === "future" ? "default" : "pointer", gap: 2,
+              }}>
+                <span style={{ fontSize: 12, color: st === "future" ? "#3A4552" : "#C7D8E5" }}>{d.getDate()}</span>
+                {st === "complete" && <Check size={10} color="#6EE7C6" />}
+                {st === "partial" && <MinusCircle size={10} color="#F5B971" />}
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 16, marginTop: 18, fontSize: 11, color: "#8FA4B8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><Check size={11} color="#6EE7C6" /> Completed</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}><MinusCircle size={11} color="#F5B971" /> Partial</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 5 }}>— Rest / no data</span>
+        </div>
+      </Glass>
+
+      <AnimatePresence>
+        {selected && <DayDetailModal date={selected} day={days[dateKey(selected)]} profile={profile} onClose={() => setSelected(null)} />}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+const navBtn = { background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 9, width: 32, height: 32, color: "#9FB4C6", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" };
+
+function DayDetailModal({ date, day, profile, onClose }) {
+  const d = day || emptyDay();
+  const score = computeDayScore(d, profile);
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+      onClick={onClose}>
+      <motion.div initial={{ scale: 0.94, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+        <Glass style={{ padding: 28, width: 420, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>{date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 6 }}>Winter Score</div>
+          <ProgressBar percent={score} />
+          <div style={{ fontSize: 13, color: "#EAF4FB", marginTop: 6 }}>{score} / 100</div>
+
+          <div style={{ marginTop: 20, display: "flex", flexDirection: "column", gap: 12 }}>
+            <DetailRow icon={Dumbbell} label="Workout" value={d.workoutDone ? d.workoutCategory : "Not logged"} />
+            <DetailRow icon={Target} label="Habits" value={`${Object.values(d.habits || {}).filter(Boolean).length} / ${profile.habits.length}`} />
+            <DetailRow icon={Droplets} label="Water" value={`${(d.water / 1000).toFixed(2)}L`} />
+            <DetailRow icon={Moon} label="Sleep" value={d.sleep?.hours ? `${d.sleep.hours}h` : "Not logged"} />
+            {d.journal?.notes && <DetailRow icon={BookOpen} label="Journal" value={d.journal.notes} />}
+          </div>
+        </Glass>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+function DetailRow({ icon: Icon, label, value }) {
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+      <Icon size={15} color="#79D6FF" style={{ marginTop: 2, flexShrink: 0 }} />
+      <div>
+        <div style={{ fontSize: 11, color: "#6E8296" }}>{label}</div>
+        <div style={{ fontSize: 13.5, color: "#EAF4FB", marginTop: 2 }}>{value}</div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   ACHIEVEMENTS
+============================================================================ */
+
+function Achievements({ derived, xp, level }) {
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Achievements" subtitle="Milestones for showing up — not for punishment when you don't." />
+      <Glass style={{ padding: 24, marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+          <div>
+            <div style={{ fontSize: 11.5, color: "#6E8296" }}>LEVEL {level}</div>
+            <div style={{ fontSize: 13, color: "#8FE1FF" }}>DISCIPLINE XP</div>
+          </div>
+          <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 13, color: "#EAF4FB" }}>{xp % 100} / 100</div>
+        </div>
+        <ProgressBar percent={xp % 100} />
+      </Glass>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }} className="wa-ach-grid">
+        {ACHIEVEMENT_DEFS.map((a) => {
+          const unlocked = a.check(derived);
+          return (
+            <motion.div key={a.id} whileHover={{ y: -3 }}>
+              <Glass style={{ padding: 22, opacity: unlocked ? 1 : 0.55, height: "100%" }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: unlocked ? "linear-gradient(135deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {unlocked ? <Trophy size={19} color="#04121F" /> : <Lock size={16} color="#5C7082" />}
+                </div>
+                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14.5, color: "#EAF4FB", marginTop: 14, letterSpacing: 0.4 }}>{a.name}</div>
+                <div style={{ fontSize: 12.5, color: "#8FA4B8", marginTop: 6 }}>{a.desc}</div>
+              </Glass>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================================
+   JOURNAL
+============================================================================ */
+
+const MOODS = ["😞", "😐", "🙂", "😄", "🔥"];
+
+function Journal({ days, saveJournal }) {
+  const [mood, setMood] = useState(3);
+  const [energy, setEnergy] = useState(3);
+  const [notes, setNotes] = useState("");
+  const [wentWell, setWentWell] = useState("");
+  const [improve, setImprove] = useState("");
+
+  const entries = useMemo(() => Object.entries(days)
+    .filter(([, d]) => d.journal)
+    .sort((a, b) => (a[0] < b[0] ? 1 : -1))
+    .slice(0, 30), [days]);
+
+  const submit = () => {
+    saveJournal({ mood, energy, notes, wentWell, improve, time: new Date().toISOString() });
+    setNotes(""); setWentWell(""); setImprove("");
+  };
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Journal" subtitle="How did today go?" />
+      <Glass style={{ padding: 24, marginBottom: 22 }}>
+        <div style={{ display: "flex", gap: 20, marginBottom: 20, flexWrap: "wrap" }}>
+          <div>
+            <div style={qlabel}>Mood</div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {MOODS.map((m, i) => (
+                <button key={i} onClick={() => setMood(i)} style={{ fontSize: 20, padding: 8, borderRadius: 10, background: mood === i ? "rgba(127,216,255,0.14)" : "transparent", border: mood === i ? "1px solid rgba(127,216,255,0.4)" : "1px solid transparent", cursor: "pointer" }}>{m}</button>
+              ))}
+            </div>
+          </div>
+          <div style={{ flex: 1, minWidth: 160 }}>
+            <div style={qlabel}>Energy: {energy}/5</div>
+            <input type="range" min="1" max="5" value={energy} onChange={(e) => setEnergy(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
+          </div>
+        </div>
+        <textarea placeholder="Notes for today..." value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...qinput, minHeight: 70, resize: "vertical", fontFamily: "'Inter',sans-serif" }} />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 }} className="wa-journal-grid">
+          <textarea placeholder="What went well?" value={wentWell} onChange={(e) => setWentWell(e.target.value)} style={{ ...qinput, minHeight: 60, resize: "vertical" }} />
+          <textarea placeholder="What should improve tomorrow?" value={improve} onChange={(e) => setImprove(e.target.value)} style={{ ...qinput, minHeight: 60, resize: "vertical" }} />
+        </div>
+        <div style={{ marginTop: 16 }}><Button onClick={submit} icon={BookOpen}>Save entry</Button></div>
+      </Glass>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {entries.length === 0 && <EmptyState icon={BookOpen} text="No entries yet. Your first reflection starts the timeline." />}
+        {entries.map(([dk, d]) => (
+          <Glass key={dk} style={{ padding: 18 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ fontSize: 12.5, color: "#8FA4B8" }}>{new Date(dk).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}</div>
+              <span style={{ fontSize: 16 }}>{MOODS[d.journal.mood]}</span>
+            </div>
+            {d.journal.notes && <div style={{ fontSize: 13.5, color: "#EAF4FB", marginTop: 8 }}>{d.journal.notes}</div>}
+          </Glass>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({ icon: Icon, text }) {
+  return (
+    <Glass style={{ padding: 40, textAlign: "center" }}>
+      <Icon size={26} color="#425466" style={{ margin: "0 auto" }} />
+      <div style={{ fontSize: 13, color: "#6E8296", marginTop: 12 }}>{text}</div>
+    </Glass>
+  );
+}
+
+/* ============================================================================
+   CHALLENGES (part of Progress area, shown within Habits/Progress nav via link) -
+   surfaced as its own section on the Progress page bottom for simplicity.
+============================================================================ */
+
+function Challenges({ joined, toggleChallenge }) {
+  return (
+    <Glass style={{ padding: 24, marginTop: 18 }}>
+      <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 16 }}>OPTIONAL CHALLENGES</div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="wa-challenge-grid">
+        {CHALLENGE_DEFS.map((c) => {
+          const isJoined = joined.includes(c.id);
+          return (
+            <div key={c.id} style={{ padding: 16, borderRadius: 14, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.07)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div style={{ fontSize: 13.5, fontWeight: 600, color: "#EAF4FB" }}>{c.name}</div>
+                <span style={{ fontSize: 10.5, color: "#6E8296" }}>{c.days}d</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#8FA4B8", marginTop: 6 }}>{c.desc}</div>
+              <div style={{ marginTop: 12 }}>
+                <Button size="sm" variant={isJoined ? "secondary" : "primary"} onClick={() => toggleChallenge(c.id)}>{isJoined ? "Leave" : "Join"}</Button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </Glass>
+  );
+}
+
+/* ============================================================================
+   SETTINGS
+============================================================================ */
+
+function Settings({ profile, updateProfile, exportData, resetArc, soundOn, setSoundOn, notifOn, setNotifOn }) {
+  const [confirmReset, setConfirmReset] = useState(false);
+  const [local, setLocal] = useState(profile);
+
+  useEffect(() => setLocal(profile), [profile]);
+
+  return (
+    <div style={pagewrap}>
+      <PageHeader title="Settings" subtitle="Your profile, goals, and preferences." />
+
+      <Glass style={{ padding: 24, marginBottom: 16 }}>
+        <SettingsSection title="Profile" />
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }} className="wa-settings-grid">
+          <div>
+            <div style={qlabel}>Name</div>
+            <input value={local.name} onChange={(e) => setLocal({ ...local, name: e.target.value })} style={{ ...qinput, padding: "10px 14px" }} />
+          </div>
+          <div>
+            <div style={qlabel}>Age</div>
+            <input type="number" value={local.age} onChange={(e) => setLocal({ ...local, age: e.target.value })} style={{ ...qinput, padding: "10px 14px" }} />
+          </div>
+        </div>
+        <div style={{ marginTop: 14 }}><Button size="sm" onClick={() => updateProfile(local)}>Save profile</Button></div>
+      </Glass>
+
+      <Glass style={{ padding: 24, marginBottom: 16 }}>
+        <SettingsSection title="Goals & Targets" />
+        <div style={{ marginBottom: 20 }}>
+          <div style={qlabel}>Sleep target: {local.sleepTarget}h</div>
+          <input type="range" min="5" max="10" step="0.5" value={local.sleepTarget} onChange={(e) => setLocal({ ...local, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+        </div>
+        <div>
+          <div style={qlabel}>Water goal: {(local.waterGoal / 1000).toFixed(1)}L</div>
+          <input type="range" min="1500" max="4000" step="250" value={local.waterGoal} onChange={(e) => setLocal({ ...local, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
+        </div>
+        <div style={{ marginTop: 14 }}><Button size="sm" onClick={() => updateProfile(local)}>Save targets</Button></div>
+      </Glass>
+
+      <Glass style={{ padding: 24, marginBottom: 16 }}>
+        <SettingsSection title="Preferences" />
+        <ToggleRow label="Sound feedback" checked={soundOn} onChange={setSoundOn} />
+        <ToggleRow label="Notifications" checked={notifOn} onChange={setNotifOn} />
+      </Glass>
+
+      <Glass style={{ padding: 24, marginBottom: 16 }}>
+        <SettingsSection title="Data" />
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Button size="sm" variant="secondary" icon={Download} onClick={exportData}>Export data (JSON)</Button>
+          <Button size="sm" variant="danger" icon={Trash2} onClick={() => setConfirmReset(true)}>Reset Winter Arc</Button>
+        </div>
+      </Glass>
+
+      <ConfirmDialog
+        open={confirmReset}
+        title="Reset your Winter Arc?"
+        body="This clears all logged days, streaks, journal entries, XP, and achievements. Your profile stays. This can't be undone."
+        confirmLabel="Reset everything"
+        danger
+        onCancel={() => setConfirmReset(false)}
+        onConfirm={() => { resetArc(); setConfirmReset(false); }}
+      />
+    </div>
+  );
+}
+
+function SettingsSection({ title }) {
+  return <div style={{ fontSize: 12, letterSpacing: 1.2, color: "#6E8296", marginBottom: 18 }}>{title.toUpperCase()}</div>;
+}
+
+function ToggleRow({ label, checked, onChange }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
+      <span style={{ fontSize: 13.5, color: "#C7D8E5" }}>{label}</span>
+      <button onClick={() => onChange(!checked)} style={{ width: 42, height: 24, borderRadius: 99, background: checked ? "linear-gradient(90deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s" }}>
+        <motion.div animate={{ x: checked ? 20 : 2 }} transition={{ duration: 0.2 }} style={{ width: 18, height: 18, borderRadius: 99, background: "#fff", position: "absolute", top: 3 }} />
+      </button>
+    </div>
+  );
+}
+
+function PageHeader({ title, subtitle }) {
+  return (
+    <div style={{ marginBottom: 22, paddingTop: 14 }}>
+      <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: "#F2F8FC", margin: 0 }}>{title}</h1>
+      {subtitle && <p style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 6 }}>{subtitle}</p>}
+    </div>
+  );
+}
+
+/* ============================================================================
+   FOCUS MODE
+============================================================================ */
+
+function FocusMode({ onExit, today, dayIndex }) {
+  const [seconds, setSeconds] = useState(0);
+  const [running, setRunning] = useState(false);
+  const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
+
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => setSeconds((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+
+  const mm = pad(Math.floor(seconds / 60));
+  const ss = pad(seconds % 60);
+
+  return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      style={{ position: "fixed", inset: 0, background: "#04060A", zIndex: 500, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+      <SnowField count={24} />
+      <button onClick={onExit} style={{ position: "absolute", top: 26, right: 26, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, width: 38, height: 38, color: "#9FB4C6", cursor: "pointer", zIndex: 2 }}><X size={17} /></button>
+      <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
+        <div style={{ fontSize: 12, letterSpacing: 2, color: "#6E8296", marginBottom: 14 }}>ARC DAY {Math.min(dayIndex, ARC_LENGTH)} · TODAY'S OBJECTIVE</div>
+        <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 32, color: "#F2F8FC", marginBottom: 40 }}>{today.workoutCategory || "Show up."}</div>
+        <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 72, color: "#79D6FF", letterSpacing: 2 }}>{mm}:{ss}</div>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 30 }}>
+          <Button onClick={() => setRunning((r) => !r)} icon={running ? Pause : Play}>{running ? "Pause" : "Start"}</Button>
+          <Button variant="secondary" onClick={() => { setSeconds(0); setRunning(false); }} icon={RotateCcw}>Reset</Button>
+        </div>
+        <div style={{ marginTop: 60, fontSize: 15, color: "#5C7082", fontStyle: "italic" }}>"{quote}"</div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ============================================================================
+   ROOT APP
+============================================================================ */
+
+export default function WinterArcApp() {
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState("landing"); // landing | onboarding | app
+  const [page, setPage] = useState("dashboard");
+  const [focusMode, setFocusMode] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [soundOn, setSoundOn] = useState(true);
+  const [notifOn, setNotifOn] = useState(true);
+  const exploreRef = useRef(null);
+
+  const [profile, setProfile] = useState(null);
+  const [days, setDays] = useState({});
+  const [arcStartDate, setArcStartDate] = useState(null);
+  const [bestStreakStored, setBestStreakStored] = useState(0);
+  const [challenges, setChallenges] = useState([]);
+  const [sleepModalOpen, setSleepModalOpen] = useState(false);
+
+  // Load persisted state
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await window.storage.get(STORAGE_KEY, false);
+        if (res && res.value) {
+          const parsed = JSON.parse(res.value);
+          setProfile(parsed.profile || null);
+          setDays(parsed.days || {});
+          setArcStartDate(parsed.arcStartDate || null);
+          setBestStreakStored(parsed.bestStreak || 0);
+          setChallenges(parsed.challenges || []);
+          setSoundOn(parsed.soundOn ?? true);
+          setNotifOn(parsed.notifOn ?? true);
+          if (parsed.profile) setView("app");
+        }
+      } catch (e) {
+        // no saved state yet
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const persist = useCallback((patch) => {
+    const payload = { profile, days, arcStartDate, bestStreak: bestStreakStored, challenges, soundOn, notifOn, ...patch };
+    window.storage.set(STORAGE_KEY, JSON.stringify(payload), false).catch(() => {});
+  }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn]);
+
+  useEffect(() => { if (!loading && profile) persist({}); }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn]); // eslint-disable-line
+
+  const today = days[todayKey()] || emptyDay();
+  const dayIndex = arcStartDate ? daysBetween(new Date(arcStartDate), new Date()) + 1 : 1;
+  const streak = useMemo(() => computeStreak(days, profile), [days, profile]);
+  const bestStreak = Math.max(streak, bestStreakStored);
+  const score = computeDayScore(today, profile);
+  const xp = useMemo(() => xpFromState(days, profile), [days, profile]);
+  const level = Math.floor(xp / 100) + 1;
+  const totalActiveDays = useMemo(() => Object.values(days).filter((d) => computeDayScore(d, profile) > 0).length, [days, profile]);
+
+  useEffect(() => { if (streak > bestStreakStored) setBestStreakStored(streak); }, [streak, bestStreakStored]);
+
+  const derived = { dayIndex, bestStreak, totalActiveDays };
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(null), 2200); };
+
+  const updateToday = (patch) => {
+    const dk = todayKey();
+    setDays((d) => ({ ...d, [dk]: { ...(d[dk] || emptyDay()), ...patch } }));
+  };
+
+  const toggleHabit = (id) => {
+    const dk = todayKey();
+    setDays((d) => {
+      const cur = d[dk] || emptyDay();
+      const nowChecked = !cur.habits[id];
+      if (nowChecked) showToast("Habit checked ✓");
+      return { ...d, [dk]: { ...cur, habits: { ...cur.habits, [id]: nowChecked } } };
+    });
+  };
+
+  const addHabit = (name) => {
+    setProfile((p) => ({ ...p, habits: [...p.habits, { id: `h_${Date.now()}`, name }] }));
+  };
+
+  const completeWorkout = (category) => {
+    updateToday({ workoutDone: true, workoutCategory: category });
+    showToast(`${category} logged. +20 XP`);
+  };
+
+  const saveJournal = (entry) => {
+    updateToday({ journal: entry });
+    showToast("Journal entry saved");
+  };
+
+  const toggleChallenge = (id) => {
+    setChallenges((c) => (c.includes(id) ? c.filter((x) => x !== id) : [...c, id]));
+  };
+
+  const exportData = () => {
+    const payload = { profile, days, arcStartDate, bestStreak: bestStreakStored, xp, challenges };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "winter-arc-data.json"; a.click();
+    URL.revokeObjectURL(url);
+    showToast("Data exported");
+  };
+
+  const resetArc = () => {
+    setDays({});
+    setArcStartDate(new Date().toISOString());
+    setBestStreakStored(0);
+    setChallenges([]);
+    showToast("Winter Arc reset. Day 1 starts now.");
+  };
+
+  const completeOnboarding = (form) => {
+    setProfile(form);
+    setArcStartDate(new Date().toISOString());
+    setView("app");
+    showToast(`Welcome, ${form.name}. Your arc begins.`);
+  };
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#05070A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <style>{FONT_STYLES}</style>
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}>
+          <Snowflake size={26} color="#79D6FF" />
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#05070A", color: "#EAF4FB", fontFamily: "'Inter',sans-serif", position: "relative" }}>
+      <style>{FONT_STYLES}</style>
+      <GlobalStyles />
+
+      {view === "landing" && (
+        <Landing onStart={() => setView("onboarding")} onExplore={() => exploreRef.current?.scrollIntoView({ behavior: "smooth" })} exploreRef={exploreRef} />
+      )}
+
+      {view === "onboarding" && (
+        <Onboarding onComplete={completeOnboarding} onCancel={() => setView("landing")} />
+      )}
+
+      {view === "app" && profile && (
+        <div style={{ display: "flex" }}>
+          <Sidebar page={page} setPage={setPage} profile={profile} streak={streak} focusMode={focusMode} setFocusMode={setFocusMode} />
+          <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
+            <SnowField count={16} />
+            <div style={{ position: "relative", zIndex: 1 }}>
+              <Topbar profile={profile} dayIndex={dayIndex} soundOn={soundOn} setSoundOn={setSoundOn} />
+              <AnimatePresence mode="wait">
+                <motion.div key={page} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+                  {page === "dashboard" && (
+                    <Dashboard state={{ days, profile }} profile={profile} today={today} dayIndex={dayIndex} streak={streak} bestStreak={bestStreak} score={score} updateToday={updateToday} setPage={setPage} onLogSleep={() => setSleepModalOpen(true)} />
+                  )}
+                  {page === "workouts" && <Workouts profile={profile} today={today} updateToday={updateToday} completeWorkout={completeWorkout} />}
+                  {page === "habits" && <Habits profile={profile} days={days} today={today} toggleHabit={toggleHabit} addHabit={addHabit} />}
+                  {page === "progress" && (
+                    <>
+                      <Progress days={days} profile={profile} />
+                      <div style={pagewrap}><Challenges joined={challenges} toggleChallenge={toggleChallenge} /></div>
+                    </>
+                  )}
+                  {page === "calendar" && <CalendarPage days={days} profile={profile} arcStartDate={arcStartDate} />}
+                  {page === "achievements" && <Achievements derived={derived} xp={xp} level={level} />}
+                  {page === "journal" && <Journal days={days} saveJournal={saveJournal} />}
+                  {page === "settings" && (
+                    <Settings profile={profile} updateProfile={setProfile} exportData={exportData} resetArc={resetArc} soundOn={soundOn} setSoundOn={setSoundOn} notifOn={notifOn} setNotifOn={setNotifOn} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+          </div>
+          <MobileNav page={page} setPage={setPage} />
+        </div>
+      )}
+
+      <AnimatePresence>
+        {focusMode && <FocusMode onExit={() => setFocusMode(false)} today={today} dayIndex={dayIndex} />}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {sleepModalOpen && (
+          <SleepLogModal
+            initial={today.sleep}
+            sleepTarget={profile?.sleepTarget || 8}
+            onClose={() => setSleepModalOpen(false)}
+            onSave={(sleep) => { updateToday({ sleep }); setSleepModalOpen(false); showToast("Sleep logged"); }}
+          />
+        )}
+      </AnimatePresence>
+
+      <Toast toast={toast} />
+    </div>
+  );
+}
+
+function GlobalStyles() {
+  return (
+    <style>{`
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      ::-webkit-scrollbar { width: 8px; height: 8px; }
+      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
+      input:focus, textarea:focus, button:focus-visible {
+        outline: 2px solid #79D6FF; outline-offset: 2px;
+      }
+      @media (max-width: 900px) {
+        .wa-sidebar { display: none !important; }
+        .wa-mobilenav { display: block !important; }
+        .wa-dash-top, .wa-dash-grid, .wa-workout-grid, .wa-progress-grid, .wa-ach-grid, .wa-journal-grid, .wa-settings-grid, .wa-challenge-grid {
+          grid-template-columns: 1fr !important;
+        }
+        .wa-daylabel { display: block !important; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+      }
+    `}</style>
+  );
+}
