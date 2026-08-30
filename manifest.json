@@ -1,0 +1,18 @@
+{
+  "name": "Winter Arc",
+  "short_name": "Winter Arc",
+  "description": "Build discipline. Track habits. Become stronger — one day at a time.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#05070A",
+  "theme_color": "#05070A",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2379D6FF' stroke-width='2'%3E%3Cpath d='M12 2v20M4.5 7l15 10M19.5 7l-15 10'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
