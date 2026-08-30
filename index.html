@@ -1,17 +1,178 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Snowflake, Flame, Droplets, Moon, Dumbbell, Target, Calendar as CalendarIcon,
-  Trophy, BookOpen, Settings as SettingsIcon, ChevronRight, ChevronLeft, Check, X,
-  Plus, Minus, Play, Pause, SkipForward, RotateCcw, Menu, Home, TrendingUp,
-  Sparkles, Zap, Award, Lock, Volume2, VolumeX, Download, AlertTriangle,
-  ClipboardList, Sunrise, Sun, Sunset, Star, ChevronDown, Edit3, Trash2,
-  CheckCircle2, Circle, MinusCircle, ArrowRight, Info
-} from "lucide-react";
-import {
-  ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip,
-  CartesianGrid, LineChart, Line, PieChart, Pie, Cell
-} from "recharts";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Winter Arc</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-void: #05070A;
+    --ice-100: #EAF4FB;
+    --ice-400: #8FA4B8;
+    --muted: #6E8296;
+    --accent: #79D6FF;
+    --accent2: #5B8CFF;
+    --mint: #6EE7C6;
+    --amber: #F5B971;
+    --danger: #FF8A8A;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg-void); }
+  body { font-family: 'Inter', sans-serif; color: var(--ice-100); }
+  #root { min-height: 100vh; position: relative; }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
+  input, textarea, button { font-family: 'Inter', sans-serif; }
+  input:focus, textarea:focus, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button { font-family: inherit; }
+
+  @keyframes wa-fall { 0% { transform: translate(0, -5vh); } 100% { transform: translate(var(--drift), 105vh); } }
+  @keyframes wa-fadein { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes wa-popin { from { opacity: 0; transform: scale(0.94) translateY(8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  @keyframes wa-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .wa-fadein { animation: wa-fadein 0.6s ease both; }
+  .wa-stepfade { animation: wa-fadein 0.35s ease both; }
+  .wa-overlay { animation: wa-fadein 0.25s ease both; }
+  .wa-modalcard { animation: wa-popin 0.3s ease both; }
+
+  .wa-btn { transition: transform .15s ease, filter .15s ease, background .15s ease; }
+  .wa-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+  .wa-btn:active { transform: translateY(0) scale(0.98); }
+
+  .wa-hoverlift { transition: transform .2s ease; }
+  .wa-hoverlift:hover { transform: translateY(-3px); }
+
+  .wa-navbtn { transition: background .15s ease, color .15s ease; }
+
+  @media (max-width: 900px) {
+    .wa-sidebar { display: none !important; }
+    .wa-mobilenav { display: flex !important; }
+    .wa-dash-top, .wa-dash-grid, .wa-workout-grid, .wa-progress-grid, .wa-ach-grid, .wa-journal-grid, .wa-settings-grid, .wa-challenge-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .wa-daylabel { display: block !important; }
+    .wa-hero-grid { grid-template-columns: 1fr !important; }
+    .wa-feature-grid { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 560px) {
+    .wa-feature-grid { grid-template-columns: 1fr !important; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script type="text/babel" data-presets="react">
+const { useState, useEffect, useMemo, useRef, useCallback, Fragment } = React;
+
+/* ============================================================================
+   ICONS — small hand-drawn stroke-icon set (feather/lucide-style), no deps
+============================================================================ */
+const ICON_PATHS = {
+  snowflake: (<g><line x1="12" y1="2" x2="12" y2="22"/><line x1="4.5" y1="7" x2="19.5" y2="17"/><line x1="19.5" y1="7" x2="4.5" y2="17"/><line x1="12" y1="2" x2="9" y2="5"/><line x1="12" y1="2" x2="15" y2="5"/><line x1="12" y1="22" x2="9" y2="19"/><line x1="12" y1="22" x2="15" y2="19"/></g>),
+  flame: (<path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c0-1-1-2-1-2 2 1 3 3 3 5a5 5 0 0 1-10 0c0-5 3-6 5-11z"/>),
+  droplets: (<path d="M12 3c2.5 4 6 7.5 6 11a6 6 0 1 1-12 0c0-3.5 3.5-7 6-11z"/>),
+  moon: (<path d="M21 12.5A8.5 8.5 0 1 1 11.5 3a7 7 0 0 0 9.5 9.5z"/>),
+  dumbbell: (<g><rect x="2" y="9" width="3" height="6" rx="1"/><rect x="19" y="9" width="3" height="6" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/><rect x="5" y="7" width="2" height="10" rx="1"/><rect x="17" y="7" width="2" height="10" rx="1"/></g>),
+  target: (<g><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></g>),
+  calendar: (<g><rect x="3" y="4" width="18" height="17" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/></g>),
+  trophy: (<path d="M8 21h8M12 17v4M7 4h10v4a5 5 0 0 1-10 0V4zM7 5H4a3 3 0 0 0 3 4M17 5h3a3 3 0 0 1-3 4"/>),
+  book: (<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V5zM19 19a2 2 0 0 1-2 2H6"/>),
+  settings: (<g><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-1.8-.3 1.6 1.6 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-1-1.5 1.6 1.6 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0 .3-1.8 1.6 1.6 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.5-1 1.6 1.6 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 1 1.5 1.6 1.6 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></g>),
+  "chevron-right": (<polyline points="9 18 15 12 9 6"/>),
+  "chevron-left": (<polyline points="15 18 9 12 15 6"/>),
+  "chevron-down": (<polyline points="6 9 12 15 18 9"/>),
+  check: (<polyline points="20 6 9 17 4 12"/>),
+  x: (<g><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></g>),
+  plus: (<g><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></g>),
+  minus: (<line x1="5" y1="12" x2="19" y2="12"/>),
+  play: (<polygon points="6 3 20 12 6 21 6 3"/>),
+  pause: (<g><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></g>),
+  "skip-forward": (<g><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></g>),
+  "rotate-ccw": (<g><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2-9.4L1 10"/></g>),
+  menu: (<g><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></g>),
+  home: (<path d="M3 11l9-8 9 8M5 10v10h14V10"/>),
+  "trending-up": (<g><polyline points="3 17 9 11 13 15 21 6"/><polyline points="14 6 21 6 21 13"/></g>),
+  sparkles: (<path d="M12 2l1.8 5.4L19 9l-5.2 1.6L12 16l-1.8-5.4L5 9l5.2-1.6L12 2zM19 15l.9 2.6L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.4z"/>),
+  zap: (<polygon points="13 2 3 14 11 14 9 22 21 10 13 10 13 2"/>),
+  award: (<g><circle cx="12" cy="8" r="6"/><polyline points="9 13.5 7 22 12 19 17 22 15 13.5"/></g>),
+  lock: (<g><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></g>),
+  "volume-2": (<g><polygon points="4 9 8 9 12 5 12 19 8 15 4 15 4 9"/><path d="M16 8a5 5 0 0 1 0 8"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></g>),
+  "volume-x": (<g><polygon points="4 9 8 9 12 5 12 19 8 15 4 15 4 9"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></g>),
+  download: (<g><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M4 19h16"/></g>),
+  "alert-triangle": (<g><path d="M12 3l10 18H2L12 3z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="17" x2="12.01" y2="17"/></g>),
+  clipboard: (<g><rect x="6" y="4" width="12" height="17" rx="2"/><rect x="9" y="2" width="6" height="4" rx="1"/></g>),
+  sunrise: (<g><line x1="12" y1="2" x2="12" y2="9"/><path d="M5.6 12a6.4 6.4 0 0 1 12.8 0"/><line x1="1" y1="18" x2="23" y2="18"/><line x1="1" y1="22" x2="23" y2="22"/><polyline points="8 6 12 2 16 6"/></g>),
+  sun: (<g><circle cx="12" cy="12" r="4.5"/><line x1="12" y1="1" x2="12" y2="3.5"/><line x1="12" y1="20.5" x2="12" y2="23"/><line x1="3.5" y1="12" x2="1" y2="12"/><line x1="23" y1="12" x2="20.5" y2="12"/><line x1="5" y1="5" x2="6.7" y2="6.7"/><line x1="17.3" y1="17.3" x2="19" y2="19"/><line x1="19" y1="5" x2="17.3" y2="6.7"/><line x1="6.7" y1="17.3" x2="5" y2="19"/></g>),
+  sunset: (<g><line x1="12" y1="10" x2="12" y2="2"/><path d="M5.6 12a6.4 6.4 0 0 1 12.8 0"/><line x1="1" y1="18" x2="23" y2="18"/><line x1="1" y1="22" x2="23" y2="22"/><polyline points="16 6 12 10 8 6"/></g>),
+  star: (<polygon points="12 2 15 9 22 9.5 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9.5 9 9 12 2"/>),
+  edit: (<g><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></g>),
+  trash: (<g><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></g>),
+  "check-circle": (<g><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 11 15.5 16 9"/></g>),
+  circle: (<circle cx="12" cy="12" r="9"/>),
+  "minus-circle": (<g><circle cx="12" cy="12" r="9"/><line x1="7.5" y1="12" x2="16.5" y2="12"/></g>),
+  "arrow-right": (<g><line x1="4" y1="12" x2="20" y2="12"/><polyline points="14 6 20 12 14 18"/></g>),
+  info: (<g><circle cx="12" cy="12" r="9"/><line x1="12" y1="11" x2="12" y2="16"/><line x1="12" y1="7.5" x2="12" y2="7.51"/></g>),
+};
+
+function Icon({ name, size = 16, color = "currentColor", style, strokeWidth = 2 }) {
+  const d = ICON_PATHS[name];
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style}>
+      {d}
+    </svg>
+  );
+}
+const mkIcon = (name) => (props) => <Icon name={name} {...props} />;
+const Snowflake = mkIcon("snowflake");
+const Flame = mkIcon("flame");
+const Droplets = mkIcon("droplets");
+const Moon = mkIcon("moon");
+const Dumbbell = mkIcon("dumbbell");
+const Target = mkIcon("target");
+const CalendarIcon = mkIcon("calendar");
+const Trophy = mkIcon("trophy");
+const BookOpen = mkIcon("book");
+const SettingsIcon = mkIcon("settings");
+const ChevronRight = mkIcon("chevron-right");
+const ChevronLeft = mkIcon("chevron-left");
+const ChevronDown = mkIcon("chevron-down");
+const Check = mkIcon("check");
+const X = mkIcon("x");
+const Plus = mkIcon("plus");
+const Play = mkIcon("play");
+const Pause = mkIcon("pause");
+const SkipForward = mkIcon("skip-forward");
+const RotateCcw = mkIcon("rotate-ccw");
+const Home = mkIcon("home");
+const TrendingUp = mkIcon("trending-up");
+const Sparkles = mkIcon("sparkles");
+const Zap = mkIcon("zap");
+const Trophy2 = Trophy;
+const Lock = mkIcon("lock");
+const Volume2 = mkIcon("volume-2");
+const VolumeX = mkIcon("volume-x");
+const Download = mkIcon("download");
+const AlertTriangle = mkIcon("alert-triangle");
+const Sunrise = mkIcon("sunrise");
+const Sun = mkIcon("sun");
+const Sunset = mkIcon("sunset");
+const Trash2 = mkIcon("trash");
+const CheckCircle2 = mkIcon("check-circle");
+const Circle = mkIcon("circle");
+const MinusCircle = mkIcon("minus-circle");
+const ArrowRight = mkIcon("arrow-right");
 
 /* ============================================================================
    CONSTANTS
@@ -20,17 +181,13 @@ import {
 const ARC_LENGTH = 90;
 const STORAGE_KEY = "winterarc:state:v1";
 
-const FONT_STYLES = `
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
-`;
-
 const GOAL_OPTIONS = [
   { id: "general", label: "General Fitness", icon: Dumbbell },
   { id: "strength", label: "Strength", icon: Flame },
   { id: "mobility", label: "Mobility", icon: Target },
   { id: "basketball", label: "Basketball Performance", icon: Zap },
   { id: "running", label: "Running", icon: TrendingUp },
-  { id: "calisthenics", label: "Calisthenics", icon: Award },
+  { id: "calisthenics", label: "Calisthenics", icon: Trophy },
   { id: "routine", label: "Healthy Routine", icon: Sunrise },
   { id: "consistency", label: "Consistency", icon: Sparkles },
 ];
@@ -193,8 +350,31 @@ function greetingForHour(h) {
 }
 
 /* ============================================================================
-   PRIMITIVE UI PIECES
+   ANIMATION HELPERS (vanilla, no framer-motion)
 ============================================================================ */
+
+function useAnimatedNumber(target, duration = 900) {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const targetRef = useRef(target);
+  useEffect(() => {
+    fromRef.current = value;
+    targetRef.current = target;
+    let start = null;
+    let raf;
+    const step = (ts) => {
+      if (!start) start = ts;
+      const t = Math.min(1, (ts - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setValue(fromRef.current + (targetRef.current - fromRef.current) * eased);
+      if (t < 1) raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line
+  }, [target, duration]);
+  return value;
+}
 
 function useReducedMotion() {
   const [reduced, setReduced] = useState(false);
@@ -209,6 +389,37 @@ function useReducedMotion() {
   }, []);
   return reduced;
 }
+
+function useInView(options) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    const obs = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setInView(true); obs.disconnect(); }
+    }, options || { threshold: 0.15 });
+    obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, []);
+  return [ref, inView];
+}
+
+function SectionReveal({ children, delay = 0 }) {
+  const [ref, inView] = useInView();
+  return (
+    <div ref={ref} style={{
+      opacity: inView ? 1 : 0,
+      transform: inView ? "translateY(0)" : "translateY(28px)",
+      transition: `opacity .7s ease ${delay}s, transform .7s ease ${delay}s`,
+    }}>
+      {children}
+    </div>
+  );
+}
+
+/* ============================================================================
+   PRIMITIVE UI PIECES
+============================================================================ */
 
 function SnowField({ count = 34 }) {
   const reduced = useReducedMotion();
@@ -225,62 +436,37 @@ function SnowField({ count = 34 }) {
   return (
     <div aria-hidden="true" style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
       {flakes.map((f) => (
-        <span
-          key={f.id}
-          style={{
-            position: "absolute",
-            top: -10,
-            left: `${f.left}%`,
-            width: f.size,
-            height: f.size,
-            borderRadius: "50%",
-            background: "#DCEEFB",
-            opacity: f.op,
-            filter: "blur(0.3px)",
-            animation: `wa-fall ${f.dur}s linear infinite`,
-            animationDelay: `${f.delay}s`,
-            "--drift": `${f.drift}px`,
-          }}
-        />
+        <span key={f.id} style={{
+          position: "absolute", top: -10, left: `${f.left}%`, width: f.size, height: f.size,
+          borderRadius: "50%", background: "#DCEEFB", opacity: f.op, filter: "blur(0.3px)",
+          animation: `wa-fall ${f.dur}s linear infinite`, animationDelay: `${f.delay}s`, "--drift": `${f.drift}px`,
+        }} />
       ))}
-      <style>{`
-        @keyframes wa-fall {
-          0% { transform: translate(0, -5vh); }
-          100% { transform: translate(var(--drift), 105vh); }
-        }
-      `}</style>
     </div>
   );
 }
 
 function Glass({ children, className = "", style = {}, as: As = "div", ...rest }) {
   return (
-    <As
-      className={className}
-      style={{
-        background: "rgba(255,255,255,0.045)",
-        border: "1px solid rgba(255,255,255,0.09)",
-        backdropFilter: "blur(20px)",
-        WebkitBackdropFilter: "blur(20px)",
-        borderRadius: 20,
-        ...style,
-      }}
-      {...rest}
-    >
+    <As className={className} style={{
+      background: "rgba(255,255,255,0.045)", border: "1px solid rgba(255,255,255,0.09)",
+      backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", borderRadius: 20, ...style,
+    }} {...rest}>
       {children}
     </As>
   );
 }
 
 function ArcRing({ percent = 0, size = 160, stroke = 10, label, sublabel, accentId = "a" }) {
+  const animated = useAnimatedNumber(percent, 1100);
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
-  const gapFraction = 0.22; // the ring is an ARC, not a full circle — leaves a gap at the bottom
+  const gapFraction = 0.22;
   const usable = c * (1 - gapFraction);
-  const offset = usable - (usable * Math.min(100, Math.max(0, percent))) / 100;
+  const offset = usable - (usable * Math.min(100, Math.max(0, animated))) / 100;
   const rot = 90 + (360 * gapFraction) / 2;
   return (
-    <div style={{ position: "relative", width: size, height: size }}>
+    <div style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
         <defs>
           <linearGradient id={`grad-${accentId}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -289,30 +475,14 @@ function ArcRing({ percent = 0, size = 160, stroke = 10, label, sublabel, accent
           </linearGradient>
           <filter id={`glow-${accentId}`}>
             <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+            <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
           </filter>
         </defs>
-        <circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke}
-          strokeDasharray={`${usable} ${c}`}
-          strokeLinecap="round"
-          transform={`rotate(${rot} ${size / 2} ${size / 2})`}
-        />
-        <motion.circle
-          cx={size / 2} cy={size / 2} r={r}
-          fill="none" stroke={`url(#grad-${accentId})`} strokeWidth={stroke}
-          strokeDasharray={`${usable} ${c}`}
-          strokeLinecap="round"
-          filter={`url(#glow-${accentId})`}
-          transform={`rotate(${rot} ${size / 2} ${size / 2})`}
-          initial={{ strokeDashoffset: usable }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.1, ease: "easeOut" }}
-        />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth={stroke}
+          strokeDasharray={`${usable} ${c}`} strokeLinecap="round" transform={`rotate(${rot} ${size / 2} ${size / 2})`} />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={`url(#grad-${accentId})`} strokeWidth={stroke}
+          strokeDasharray={`${usable} ${c}`} strokeDashoffset={offset} strokeLinecap="round"
+          filter={`url(#glow-${accentId})`} transform={`rotate(${rot} ${size / 2} ${size / 2})`} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }}>
         {label && <div style={{ fontFamily: "'JetBrains Mono', monospace", fontWeight: 700, fontSize: size * 0.16, color: "#F2F8FC", lineHeight: 1 }}>{label}</div>}
@@ -322,35 +492,15 @@ function ArcRing({ percent = 0, size = 160, stroke = 10, label, sublabel, accent
   );
 }
 
-function CountUp({ value, duration = 0.8, format = (v) => Math.round(v) }) {
-  const [display, setDisplay] = useState(0);
-  const startRef = useRef(null);
-  const fromRef = useRef(0);
-  useEffect(() => {
-    fromRef.current = display;
-    startRef.current = null;
-    let raf;
-    const step = (ts) => {
-      if (!startRef.current) startRef.current = ts;
-      const t = Math.min(1, (ts - startRef.current) / (duration * 1000));
-      const eased = 1 - Math.pow(1 - t, 3);
-      setDisplay(fromRef.current + (value - fromRef.current) * eased);
-      if (t < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line
-  }, [value]);
-  return <>{format(display)}</>;
+function CountUp({ value, format = (v) => Math.round(v) }) {
+  const animated = useAnimatedNumber(value, 800);
+  return <>{format(animated)}</>;
 }
 
-function Button({ children, variant = "primary", size = "md", className = "", icon: Icon, ...rest }) {
-  const base = {
-    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+function Button({ children, variant = "primary", size = "md", className = "", icon: Icon, style: styleOverride, ...rest }) {
+  const base = { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
     fontFamily: "'Space Grotesk', sans-serif", fontWeight: 600, letterSpacing: 0.4,
-    borderRadius: 12, cursor: "pointer", transition: "all .18s ease", border: "1px solid transparent",
-    whiteSpace: "nowrap",
-  };
+    borderRadius: 12, cursor: "pointer", border: "1px solid transparent", whiteSpace: "nowrap" };
   const sizes = { sm: { padding: "8px 14px", fontSize: 12.5 }, md: { padding: "12px 22px", fontSize: 14 }, lg: { padding: "16px 30px", fontSize: 15.5 } };
   const variants = {
     primary: { background: "linear-gradient(135deg, #7FD8FF, #5B8CFF)", color: "#04121F", boxShadow: "0 0 0 1px rgba(127,216,255,0.25), 0 8px 24px -8px rgba(91,140,255,0.55)" },
@@ -359,112 +509,100 @@ function Button({ children, variant = "primary", size = "md", className = "", ic
     danger: { background: "rgba(255,90,90,0.12)", color: "#FF8A8A", border: "1px solid rgba(255,90,90,0.3)" },
   };
   return (
-    <motion.button
-      whileHover={{ y: -1, filter: "brightness(1.06)" }}
-      whileTap={{ y: 0, scale: 0.98 }}
-      style={{ ...base, ...sizes[size], ...variants[variant] }}
-      className={className}
-      {...rest}
-    >
+    <button className={`wa-btn ${className}`} style={{ ...base, ...sizes[size], ...variants[variant], ...styleOverride }} {...rest}>
       {Icon && <Icon size={size === "lg" ? 18 : 15} />}
       {children}
-    </motion.button>
+    </button>
   );
 }
 
 function ProgressBar({ percent, color = "linear-gradient(90deg,#79D6FF,#5B8CFF)", height = 8 }) {
+  const animated = useAnimatedNumber(percent, 900);
   return (
     <div style={{ height, borderRadius: height, background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-      <motion.div
-        initial={{ width: 0 }}
-        animate={{ width: `${Math.min(100, Math.max(0, percent))}%` }}
-        transition={{ duration: 0.9, ease: "easeOut" }}
-        style={{ height: "100%", background: color, borderRadius: height }}
-      />
+      <div style={{ height: "100%", width: `${Math.min(100, Math.max(0, animated))}%`, background: color, borderRadius: height }} />
     </div>
   );
 }
 
 function ConfirmDialog({ open, title, body, confirmLabel = "Confirm", danger, onConfirm, onCancel }) {
+  if (!open) return null;
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-          style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-          onClick={onCancel}
-        >
-          <motion.div
-            initial={{ scale: 0.94, opacity: 0, y: 10 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Glass style={{ padding: 28, width: 380, maxWidth: "90vw" }}>
-              <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
-                {danger && <AlertTriangle size={20} color="#FF8A8A" style={{ marginTop: 2, flexShrink: 0 }} />}
-                <div>
-                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{title}</div>
-                  <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8, lineHeight: 1.5 }}>{body}</div>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 10, marginTop: 22, justifyContent: "flex-end" }}>
-                <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
-                <Button variant={danger ? "danger" : "primary"} size="sm" onClick={onConfirm}>{confirmLabel}</Button>
-              </div>
-            </Glass>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onCancel}>
+      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
+        <Glass style={{ padding: 28, width: 380, maxWidth: "90vw" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            {danger && <AlertTriangle size={20} color="#FF8A8A" style={{ marginTop: 2, flexShrink: 0 }} />}
+            <div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{title}</div>
+              <div style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 8, lineHeight: 1.5 }}>{body}</div>
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 22, justifyContent: "flex-end" }}>
+            <Button variant="ghost" size="sm" onClick={onCancel}>Cancel</Button>
+            <Button variant={danger ? "danger" : "primary"} size="sm" onClick={onConfirm}>{confirmLabel}</Button>
+          </div>
+        </Glass>
+      </div>
+    </div>
   );
 }
 
 function Toast({ toast }) {
+  if (!toast) return null;
   return (
-    <AnimatePresence>
-      {toast && (
-        <motion.div
-          initial={{ opacity: 0, y: 20, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: 10, x: "-50%" }}
-          style={{ position: "fixed", bottom: 28, left: "50%", zIndex: 300 }}
-        >
-          <Glass style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRadius: 999, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.6)" }}>
-            <CheckCircle2 size={16} color="#6EE7C6" />
-            <span style={{ fontSize: 13.5, color: "#EAF4FB" }}>{toast}</span>
-          </Glass>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <div className="wa-modalcard" style={{ position: "fixed", bottom: 28, left: "50%", transform: "translateX(-50%)", zIndex: 300 }}>
+      <Glass style={{ padding: "12px 20px", display: "flex", alignItems: "center", gap: 10, borderRadius: 999, boxShadow: "0 10px 30px -10px rgba(0,0,0,0.6)" }}>
+        <CheckCircle2 size={16} color="#6EE7C6" />
+        <span style={{ fontSize: 13.5, color: "#EAF4FB" }}>{toast}</span>
+      </Glass>
+    </div>
   );
 }
 
-function SectionReveal({ children, delay = 0 }) {
+/* ============================================================================
+   MINI CHARTS (custom SVG, no chart library)
+============================================================================ */
+
+function MiniAreaChart({ data, dataKey, color = "#79D6FF", height = 220 }) {
+  const w = 600;
+  const max = Math.max(1, ...data.map((d) => d[dataKey]));
+  const n = Math.max(1, data.length - 1);
+  const stepX = w / n;
+  const pts = data.map((d, i) => [i * stepX, height - 20 - (d[dataKey] / max) * (height - 40)]);
+  const line = pts.map((p, i) => (i === 0 ? "M" : "L") + p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
+  const area = `${line} L ${pts[pts.length - 1][0].toFixed(1)},${height - 20} L 0,${height - 20} Z`;
+  const gid = "grad_" + dataKey;
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 28 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.7, delay, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.5" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0, 1, 2, 3].map((i) => (
+        <line key={i} x1="0" x2={w} y1={20 + (i * (height - 40)) / 3} y2={20 + (i * (height - 40)) / 3} stroke="rgba(255,255,255,0.06)" />
+      ))}
+      <path d={area} fill={`url(#${gid})`} />
+      <path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   );
 }
 
-function Tooltip2({ label, children }) {
-  const [show, setShow] = useState(false);
+function MiniBarChart({ data, dataKey, color = "#5B8CFF", height = 180 }) {
+  const w = 600;
+  const max = Math.max(1, ...data.map((d) => d[dataKey]));
+  const gap = w / data.length;
+  const bw = gap * 0.55;
   return (
-    <span style={{ position: "relative" }} onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
-      {children}
-      <AnimatePresence>
-        {show && (
-          <motion.span
-            initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-            style={{ position: "absolute", bottom: "125%", left: "50%", transform: "translateX(-50%)", background: "#101418", border: "1px solid rgba(255,255,255,0.1)", color: "#EAF4FB", fontSize: 11.5, padding: "6px 10px", borderRadius: 8, whiteSpace: "nowrap", zIndex: 50, pointerEvents: "none" }}
-          >
-            {label}
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </span>
+    <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+      {[0, 1, 2].map((i) => (<line key={i} x1="0" x2={w} y1={10 + (i * (height - 30)) / 2} y2={10 + (i * (height - 30)) / 2} stroke="rgba(255,255,255,0.06)" />))}
+      {data.map((d, i) => {
+        const bh = Math.max(2, (d[dataKey] / max) * (height - 30));
+        return <rect key={i} x={i * gap + (gap - bw) / 2} y={height - 20 - bh} width={bw} height={bh} rx={3} fill={color} opacity="0.9" />;
+      })}
+    </svg>
   );
 }
 
@@ -478,7 +616,6 @@ function Landing({ onStart, onExplore, exploreRef }) {
     <div style={{ position: "relative" }}>
       <SnowField count={46} />
       <div style={{ position: "relative", zIndex: 1, maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
-        {/* NAV */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 0" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <Snowflake size={20} color="#79D6FF" />
@@ -487,41 +624,32 @@ function Landing({ onStart, onExplore, exploreRef }) {
           <Button variant="secondary" size="sm" onClick={onStart}>Sign In</Button>
         </div>
 
-        {/* HERO */}
         <div style={{ display: "grid", gridTemplateColumns: "1.05fr 0.95fr", gap: 50, alignItems: "center", paddingTop: 56, paddingBottom: 60 }} className="wa-hero-grid">
-          <div>
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
-              style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(127,216,255,0.25)", background: "rgba(127,216,255,0.06)", fontSize: 12, color: "#8FD4FF", marginBottom: 26, letterSpacing: 0.5 }}>
+          <div className="wa-fadein">
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 14px", borderRadius: 999, border: "1px solid rgba(127,216,255,0.25)", background: "rgba(127,216,255,0.06)", fontSize: 12, color: "#8FD4FF", marginBottom: 26, letterSpacing: 0.5 }}>
               <greet.Icon size={13} /> {greet.text}
-            </motion.div>
-            <motion.h1
-              initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.05 }}
-              style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: "clamp(40px, 5.4vw, 68px)", lineHeight: 1.02, letterSpacing: -1, color: "#F5FAFD", margin: 0 }}
-            >
+            </div>
+            <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: "clamp(40px, 5.4vw, 68px)", lineHeight: 1.02, letterSpacing: -1, color: "#F5FAFD", margin: 0 }}>
               ENTER YOUR<br /><span style={{ background: "linear-gradient(135deg,#8FE1FF,#5B8CFF)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>WINTER ARC.</span>
-            </motion.h1>
-            <motion.p initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.15 }}
-              style={{ fontSize: 17, color: "#93A8BB", marginTop: 22, maxWidth: 460, lineHeight: 1.6 }}>
+            </h1>
+            <p style={{ fontSize: 17, color: "#93A8BB", marginTop: 22, maxWidth: 460, lineHeight: 1.6 }}>
               Build discipline. Track consistency. Become stronger — one day at a time.
-            </motion.p>
-            <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.25 }}
-              style={{ display: "flex", gap: 14, marginTop: 34, flexWrap: "wrap" }}>
+            </p>
+            <div style={{ display: "flex", gap: 14, marginTop: 34, flexWrap: "wrap" }}>
               <Button size="lg" onClick={onStart} icon={ArrowRight}>START YOUR ARC</Button>
               <Button size="lg" variant="secondary" onClick={onExplore}>EXPLORE THE SYSTEM</Button>
-            </motion.div>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8, delay: 0.4 }}
-              style={{ display: "flex", gap: 26, marginTop: 46 }}>
+            </div>
+            <div style={{ display: "flex", gap: 26, marginTop: 46 }}>
               {[["90", "day arc"], ["9", "habit tracks"], ["100%", "your pace"]].map(([n, l]) => (
                 <div key={l}>
                   <div style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 22, color: "#EAF4FB", fontWeight: 700 }}>{n}</div>
                   <div style={{ fontSize: 11.5, color: "#6E8296", letterSpacing: 0.5, textTransform: "uppercase" }}>{l}</div>
                 </div>
               ))}
-            </motion.div>
+            </div>
           </div>
 
-          {/* Hero dashboard preview card */}
-          <motion.div initial={{ opacity: 0, scale: 0.94, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.2 }}>
+          <div className="wa-fadein" style={{ animationDelay: ".15s" }}>
             <Glass style={{ padding: 24, boxShadow: "0 30px 80px -30px rgba(0,0,0,0.7)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
                 <div style={{ fontSize: 11, letterSpacing: 1.5, color: "#6E8296", textTransform: "uppercase" }}>Live Preview</div>
@@ -548,10 +676,9 @@ function Landing({ onStart, onExplore, exploreRef }) {
                 </Glass>
               </div>
             </Glass>
-          </motion.div>
+          </div>
         </div>
 
-        {/* FEATURES */}
         <div ref={exploreRef} style={{ paddingTop: 60, paddingBottom: 30 }}>
           <SectionReveal>
             <div style={{ fontSize: 12, letterSpacing: 2, color: "#6E8296", textAlign: "center", marginBottom: 10 }}>THE SYSTEM</div>
@@ -577,7 +704,6 @@ function Landing({ onStart, onExplore, exploreRef }) {
           </div>
         </div>
 
-        {/* PHILOSOPHY */}
         <SectionReveal>
           <div style={{ padding: "70px 0", textAlign: "center" }}>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontSize: "clamp(22px,2.6vw,30px)", color: "#EAF4FB", maxWidth: 640, margin: "0 auto", lineHeight: 1.4 }}>
@@ -596,15 +722,6 @@ function Landing({ onStart, onExplore, exploreRef }) {
           <span>Built for consistency, not comparison.</span>
         </div>
       </div>
-      <style>{`
-        @media (max-width: 860px) {
-          .wa-hero-grid { grid-template-columns: 1fr !important; }
-          .wa-feature-grid { grid-template-columns: 1fr 1fr !important; }
-        }
-        @media (max-width: 560px) {
-          .wa-feature-grid { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -664,105 +781,103 @@ function Onboarding({ onComplete, onCancel }) {
 
         <div style={{ fontSize: 11.5, letterSpacing: 1.5, color: "#6E8296", marginBottom: 10 }}>STEP {step + 1} OF {steps.length}</div>
 
-        <AnimatePresence mode="wait">
-          <motion.div key={step} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.35 }}>
-            {step === 0 && (
-              <div>
-                <h2 style={qh}>What should we call you?</h2>
-                <input placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={qinput} />
-                <div style={{ height: 14 }} />
-                <input placeholder="Age" type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} style={qinput} />
+        <div key={step} className="wa-stepfade">
+          {step === 0 && (
+            <div>
+              <h2 style={qh}>What should we call you?</h2>
+              <input placeholder="Your name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} style={qinput} />
+              <div style={{ height: 14 }} />
+              <input placeholder="Age" type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} style={qinput} />
+            </div>
+          )}
+          {step === 1 && (
+            <div>
+              <h2 style={qh}>What's your fitness experience?</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {EXPERIENCE_OPTIONS.map((opt) => (
+                  <Chip key={opt} selected={form.experience === opt} onClick={() => setForm({ ...form, experience: opt })} label={opt} wide />
+                ))}
               </div>
-            )}
-            {step === 1 && (
-              <div>
-                <h2 style={qh}>What's your fitness experience?</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {EXPERIENCE_OPTIONS.map((opt) => (
-                    <Chip key={opt} selected={form.experience === opt} onClick={() => setForm({ ...form, experience: opt })} label={opt} wide />
-                  ))}
-                </div>
+            </div>
+          )}
+          {step === 2 && (
+            <div>
+              <h2 style={qh}>What are your main goals?</h2>
+              <p style={qsub}>Select as many as apply.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {GOAL_OPTIONS.map((g) => (
+                  <Chip key={g.id} selected={form.goals.includes(g.id)} onClick={() => toggle("goals", g.id)} label={g.label} icon={g.icon} />
+                ))}
               </div>
-            )}
-            {step === 2 && (
-              <div>
-                <h2 style={qh}>What are your main goals?</h2>
-                <p style={qsub}>Select as many as apply.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {GOAL_OPTIONS.map((g) => (
-                    <Chip key={g.id} selected={form.goals.includes(g.id)} onClick={() => toggle("goals", g.id)} label={g.label} icon={g.icon} />
-                  ))}
-                </div>
+            </div>
+          )}
+          {step === 3 && (
+            <div>
+              <h2 style={qh}>Which days can you train?</h2>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
+                {DAY_OPTIONS.map((d) => (
+                  <Chip key={d} selected={form.trainingDays.includes(d)} onClick={() => toggle("trainingDays", d)} label={d} compact />
+                ))}
               </div>
-            )}
-            {step === 3 && (
-              <div>
-                <h2 style={qh}>Which days can you train?</h2>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 26 }}>
-                  {DAY_OPTIONS.map((d) => (
-                    <Chip key={d} selected={form.trainingDays.includes(d)} onClick={() => toggle("trainingDays", d)} label={d} compact />
-                  ))}
-                </div>
-                <h3 style={{ ...qh, fontSize: 16, marginBottom: 12 }}>Preferred session length</h3>
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {DURATION_OPTIONS.map((d) => (
-                    <Chip key={d} selected={form.duration === d} onClick={() => setForm({ ...form, duration: d })} label={d} compact />
-                  ))}
-                </div>
+              <h3 style={{ ...qh, fontSize: 16, marginBottom: 12 }}>Preferred session length</h3>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {DURATION_OPTIONS.map((d) => (
+                  <Chip key={d} selected={form.duration === d} onClick={() => setForm({ ...form, duration: d })} label={d} compact />
+                ))}
               </div>
-            )}
-            {step === 4 && (
-              <div>
-                <h2 style={qh}>What equipment do you have?</h2>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {EQUIPMENT_OPTIONS.map((e) => (
-                    <Chip key={e} selected={form.equipment.includes(e)} onClick={() => toggle("equipment", e)} label={e} wide />
-                  ))}
-                </div>
+            </div>
+          )}
+          {step === 4 && (
+            <div>
+              <h2 style={qh}>What equipment do you have?</h2>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {EQUIPMENT_OPTIONS.map((e) => (
+                  <Chip key={e} selected={form.equipment.includes(e)} onClick={() => toggle("equipment", e)} label={e} wide />
+                ))}
               </div>
-            )}
-            {step === 5 && (
-              <div>
-                <h2 style={qh}>Set your daily targets</h2>
-                <p style={qsub}>These are starting points — adjust anytime in Settings.</p>
-                <div style={{ marginBottom: 26 }}>
-                  <div style={qlabel}>Sleep target: {form.sleepTarget}h</div>
-                  <input type="range" min="5" max="10" step="0.5" value={form.sleepTarget} onChange={(e) => setForm({ ...form, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
-                </div>
-                <div>
-                  <div style={qlabel}>Water goal: {(form.waterGoal / 1000).toFixed(1)}L</div>
-                  <input type="range" min="1500" max="4000" step="250" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
-                </div>
+            </div>
+          )}
+          {step === 5 && (
+            <div>
+              <h2 style={qh}>Set your daily targets</h2>
+              <p style={qsub}>These are starting points — adjust anytime in Settings.</p>
+              <div style={{ marginBottom: 26 }}>
+                <div style={qlabel}>Sleep target: {form.sleepTarget}h</div>
+                <input type="range" min="5" max="10" step="0.5" value={form.sleepTarget} onChange={(e) => setForm({ ...form, sleepTarget: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
               </div>
-            )}
-            {step === 6 && (
               <div>
-                <h2 style={qh}>Which habits matter to you?</h2>
-                <p style={qsub}>You can add custom habits later.</p>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  {DEFAULT_HABITS.map((h) => (
-                    <Chip key={h.id} selected={form.habits.includes(h.id)} onClick={() => toggle("habits", h.id)} label={h.name} />
-                  ))}
-                </div>
+                <div style={qlabel}>Water goal: {(form.waterGoal / 1000).toFixed(1)}L</div>
+                <input type="range" min="1500" max="4000" step="250" value={form.waterGoal} onChange={(e) => setForm({ ...form, waterGoal: Number(e.target.value) })} style={{ width: "100%", accentColor: "#79D6FF" }} />
               </div>
-            )}
-            {step === 7 && (
-              <div>
-                <h2 style={qh}>Your Winter Arc is ready, {form.name || "there"}.</h2>
-                <p style={qsub}>A 90-day arc begins the moment you confirm.</p>
-                <Glass style={{ padding: 20, marginTop: 10 }}>
-                  <ReviewRow label="Experience" value={form.experience} />
-                  <ReviewRow label="Goals" value={form.goals.map((g) => GOAL_OPTIONS.find((o) => o.id === g)?.label).join(", ")} />
-                  <ReviewRow label="Training days" value={form.trainingDays.join(", ")} />
-                  <ReviewRow label="Session length" value={form.duration} />
-                  <ReviewRow label="Sleep target" value={`${form.sleepTarget}h`} />
-                  <ReviewRow label="Water goal" value={`${(form.waterGoal / 1000).toFixed(1)}L`} />
-                  <ReviewRow label="Habits" value={`${form.habits.length} selected`} last />
-                </Glass>
+            </div>
+          )}
+          {step === 6 && (
+            <div>
+              <h2 style={qh}>Which habits matter to you?</h2>
+              <p style={qsub}>You can add custom habits later.</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                {DEFAULT_HABITS.map((h) => (
+                  <Chip key={h.id} selected={form.habits.includes(h.id)} onClick={() => toggle("habits", h.id)} label={h.name} />
+                ))}
               </div>
-            )}
-          </motion.div>
-        </AnimatePresence>
+            </div>
+          )}
+          {step === 7 && (
+            <div>
+              <h2 style={qh}>Your Winter Arc is ready, {form.name || "there"}.</h2>
+              <p style={qsub}>A 90-day arc begins the moment you confirm.</p>
+              <Glass style={{ padding: 20, marginTop: 10 }}>
+                <ReviewRow label="Experience" value={form.experience} />
+                <ReviewRow label="Goals" value={form.goals.map((g) => GOAL_OPTIONS.find((o) => o.id === g)?.label).join(", ")} />
+                <ReviewRow label="Training days" value={form.trainingDays.join(", ")} />
+                <ReviewRow label="Session length" value={form.duration} />
+                <ReviewRow label="Sleep target" value={`${form.sleepTarget}h`} />
+                <ReviewRow label="Water goal" value={`${(form.waterGoal / 1000).toFixed(1)}L`} />
+                <ReviewRow label="Habits" value={`${form.habits.length} selected`} last />
+              </Glass>
+            </div>
+          )}
+        </div>
 
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 40 }}>
           <Button variant="ghost" onClick={() => (step === 0 ? onCancel() : setStep(step - 1))} icon={ChevronLeft}>{step === 0 ? "Cancel" : "Back"}</Button>
@@ -793,22 +908,18 @@ function ReviewRow({ label, value, last }) {
 
 function Chip({ selected, onClick, label, icon: Icon, wide, compact }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.97 }}
-      onClick={onClick}
-      style={{
-        display: "flex", alignItems: "center", gap: 8, justifyContent: compact ? "center" : "flex-start",
-        padding: compact ? "10px 16px" : "13px 16px", borderRadius: 12, cursor: "pointer",
-        background: selected ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
-        border: selected ? "1px solid rgba(127,216,255,0.5)" : "1px solid rgba(255,255,255,0.09)",
-        color: selected ? "#8FE1FF" : "#B9C7D3", fontSize: 13.5, fontFamily: "'Inter',sans-serif",
-        width: wide ? "100%" : "auto", boxSizing: "border-box", transition: "all .15s",
-      }}
-    >
+    <button className="wa-btn" onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: 8, justifyContent: compact ? "center" : "flex-start",
+      padding: compact ? "10px 16px" : "13px 16px", borderRadius: 12, cursor: "pointer",
+      background: selected ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
+      border: selected ? "1px solid rgba(127,216,255,0.5)" : "1px solid rgba(255,255,255,0.09)",
+      color: selected ? "#8FE1FF" : "#B9C7D3", fontSize: 13.5, fontFamily: "'Inter',sans-serif",
+      width: wide ? "100%" : "auto", boxSizing: "border-box",
+    }}>
       {Icon && <Icon size={15} />}
       {label}
       {selected && !Icon && <Check size={13} style={{ marginLeft: "auto" }} />}
-    </motion.button>
+    </button>
   );
 }
 
@@ -828,9 +939,9 @@ const NAV_ITEMS = [
 ];
 const MOBILE_NAV_IDS = ["dashboard", "workouts", "habits", "progress", "settings"];
 
-function Sidebar({ page, setPage, profile, streak, focusMode, setFocusMode }) {
+function Sidebar({ page, setPage, profile, streak, setFocusMode }) {
   return (
-    <div style={{ width: 236, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "26px 16px", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0 }} className="wa-sidebar">
+    <div className="wa-sidebar" style={{ width: 236, flexShrink: 0, borderRight: "1px solid rgba(255,255,255,0.06)", padding: "26px 16px", display: "flex", flexDirection: "column", height: "100vh", position: "sticky", top: 0 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 9, padding: "0 10px", marginBottom: 30 }}>
         <Snowflake size={18} color="#79D6FF" />
         <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, letterSpacing: 2, fontSize: 13, color: "#EAF4FB" }}>WINTER ARC</span>
@@ -839,22 +950,19 @@ function Sidebar({ page, setPage, profile, streak, focusMode, setFocusMode }) {
         {NAV_ITEMS.map((item) => {
           const active = page === item.id;
           return (
-            <button key={item.id} onClick={() => setPage(item.id)}
-              style={{
-                display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 11, border: "none", cursor: "pointer",
-                background: active ? "rgba(127,216,255,0.1)" : "transparent", color: active ? "#8FE1FF" : "#8399AC",
-                fontSize: 13.5, fontFamily: "'Inter',sans-serif", fontWeight: active ? 600 : 500, textAlign: "left", transition: "all .15s",
-                position: "relative",
-              }}
-            >
-              {active && <motion.div layoutId="navactive" style={{ position: "absolute", left: 0, top: 6, bottom: 6, width: 3, borderRadius: 3, background: "linear-gradient(180deg,#79D6FF,#5B8CFF)" }} />}
+            <button key={item.id} className="wa-navbtn" onClick={() => setPage(item.id)} style={{
+              display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", borderRadius: 11, border: "none", cursor: "pointer",
+              background: active ? "rgba(127,216,255,0.1)" : "transparent", color: active ? "#8FE1FF" : "#8399AC",
+              fontSize: 13.5, fontFamily: "'Inter',sans-serif", fontWeight: active ? 600 : 500, textAlign: "left", position: "relative",
+            }}>
+              {active && <div style={{ position: "absolute", left: 0, top: 6, bottom: 6, width: 3, borderRadius: 3, background: "linear-gradient(180deg,#79D6FF,#5B8CFF)" }} />}
               <item.icon size={16} /> {item.label}
             </button>
           );
         })}
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        <button onClick={() => setFocusMode(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 11, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9FB4C6", fontSize: 12.5, cursor: "pointer" }}>
+        <button className="wa-btn" onClick={() => setFocusMode(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 11, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", color: "#9FB4C6", fontSize: 12.5, cursor: "pointer" }}>
           <Zap size={14} /> Focus Mode
         </button>
         <Glass style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
@@ -873,8 +981,8 @@ function Sidebar({ page, setPage, profile, streak, focusMode, setFocusMode }) {
 
 function MobileNav({ page, setPage }) {
   return (
-    <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, display: "none" }} className="wa-mobilenav">
-      <Glass style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none", display: "flex", justifyContent: "space-around", padding: "10px 4px calc(10px + env(safe-area-inset-bottom))" }}>
+    <div className="wa-mobilenav" style={{ position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 60, display: "none" }}>
+      <Glass style={{ borderRadius: 0, borderLeft: "none", borderRight: "none", borderBottom: "none", display: "flex", justifyContent: "space-around", padding: "10px 4px calc(10px + env(safe-area-inset-bottom))", width: "100%" }}>
         {MOBILE_NAV_IDS.map((id) => {
           const item = NAV_ITEMS.find((n) => n.id === id);
           const active = page === id;
@@ -890,17 +998,17 @@ function MobileNav({ page, setPage }) {
   );
 }
 
-function Topbar({ profile, dayIndex, onQuickWater, soundOn, setSoundOn }) {
+function Topbar({ profile, dayIndex, soundOn, setSoundOn }) {
   const greet = greetingForHour(new Date().getHours());
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", position: "sticky", top: 0, zIndex: 20, background: "linear-gradient(180deg, rgba(6,8,11,0.92), rgba(6,8,11,0.75) 70%, transparent)", backdropFilter: "blur(10px)" }} className="wa-topbar">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px", position: "sticky", top: 0, zIndex: 20, background: "linear-gradient(180deg, rgba(6,8,11,0.92), rgba(6,8,11,0.75) 70%, transparent)", backdropFilter: "blur(10px)" }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12.5, color: "#7E97AC" }}><greet.Icon size={13} /> {greet.text}</div>
         <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 20, color: "#F2F8FC", marginTop: 2 }}>{profile.name}</div>
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ fontSize: 11.5, color: "#6E8296", display: "none" }} className="wa-daylabel">ARC DAY {Math.min(dayIndex, ARC_LENGTH)} / {ARC_LENGTH}</div>
-        <button onClick={() => setSoundOn((s) => !s)} title="Toggle sound feedback" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", color: "#9FB4C6", cursor: "pointer" }}>
+        <div className="wa-daylabel" style={{ fontSize: 11.5, color: "#6E8296", display: "none" }}>ARC DAY {Math.min(dayIndex, ARC_LENGTH)} / {ARC_LENGTH}</div>
+        <button className="wa-btn" onClick={() => setSoundOn((s) => !s)} title="Toggle sound feedback" style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 10, width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", color: "#9FB4C6", cursor: "pointer" }}>
           {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
         </button>
       </div>
@@ -912,7 +1020,7 @@ function Topbar({ profile, dayIndex, onQuickWater, soundOn, setSoundOn }) {
    DASHBOARD
 ============================================================================ */
 
-function Dashboard({ state, profile, today, dayIndex, streak, bestStreak, score, updateToday, setPage, onLogSleep }) {
+function Dashboard({ profile, today, dayIndex, streak, bestStreak, score, updateToday, setPage, onLogSleep }) {
   const habitsTotal = profile.habits.length;
   const habitsDone = profile.habits.filter((h) => today.habits[h.id]).length;
 
@@ -1018,8 +1126,8 @@ const cardHead = { display: "flex", alignItems: "center", gap: 8, fontSize: 12, 
    WORKOUTS
 ============================================================================ */
 
-function Workouts({ profile, today, updateToday, completeWorkout }) {
-  const [active, setActive] = useState(null); // category name for session
+function Workouts({ profile, today, completeWorkout }) {
+  const [active, setActive] = useState(null);
   const categories = Object.keys(WORKOUT_LIBRARY);
 
   if (active) {
@@ -1034,24 +1142,26 @@ function Workouts({ profile, today, updateToday, completeWorkout }) {
           const w = WORKOUT_LIBRARY[cat];
           const doneToday = today.workoutDone && today.workoutCategory === cat;
           return (
-            <Glass key={cat} style={{ padding: 22, display: "flex", flexDirection: "column" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{cat}</div>
-                {doneToday && <CheckCircle2 size={17} color="#6EE7C6" />}
-              </div>
-              <div style={{ fontSize: 12, color: "#6E8296", marginTop: 6 }}>{w.muscles} · {w.difficulty} · ~{w.duration} min</div>
-              <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
-                {w.exercises.slice(0, 3).map((ex) => (
-                  <div key={ex.name} style={{ fontSize: 12.5, color: "#8FA4B8", display: "flex", justifyContent: "space-between" }}>
-                    <span>{ex.name}</span><span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6E8296" }}>{ex.sets}×{ex.reps}</span>
-                  </div>
-                ))}
-                {w.exercises.length > 3 && <div style={{ fontSize: 11.5, color: "#5C7082" }}>+{w.exercises.length - 3} more</div>}
-              </div>
-              <div style={{ marginTop: 18 }}>
-                <Button size="sm" onClick={() => setActive(cat)} icon={Play}>{doneToday ? "Do again" : "Start"}</Button>
-              </div>
-            </Glass>
+            <div key={cat} className="wa-hoverlift">
+              <Glass style={{ padding: 22, display: "flex", flexDirection: "column", height: "100%" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#F2F8FC" }}>{cat}</div>
+                  {doneToday && <CheckCircle2 size={17} color="#6EE7C6" />}
+                </div>
+                <div style={{ fontSize: 12, color: "#6E8296", marginTop: 6 }}>{w.muscles} · {w.difficulty} · ~{w.duration} min</div>
+                <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {w.exercises.slice(0, 3).map((ex) => (
+                    <div key={ex.name} style={{ fontSize: 12.5, color: "#8FA4B8", display: "flex", justifyContent: "space-between" }}>
+                      <span>{ex.name}</span><span style={{ fontFamily: "'JetBrains Mono',monospace", color: "#6E8296" }}>{ex.sets}×{ex.reps}</span>
+                    </div>
+                  ))}
+                  {w.exercises.length > 3 && <div style={{ fontSize: 11.5, color: "#5C7082" }}>+{w.exercises.length - 3} more</div>}
+                </div>
+                <div style={{ marginTop: 18 }}>
+                  <Button size="sm" onClick={() => setActive(cat)} icon={Play}>{doneToday ? "Do again" : "Start"}</Button>
+                </div>
+              </Glass>
+            </div>
           );
         })}
       </div>
@@ -1062,7 +1172,7 @@ function Workouts({ profile, today, updateToday, completeWorkout }) {
 function WorkoutSession({ category, onExit, onFinish }) {
   const w = WORKOUT_LIBRARY[category];
   const [idx, setIdx] = useState(0);
-  const [phase, setPhase] = useState("exercise"); // exercise | resting | done
+  const [phase, setPhase] = useState("exercise");
   const [restLeft, setRestLeft] = useState(0);
   const [completedSets, setCompletedSets] = useState({});
   const timerRef = useRef(null);
@@ -1120,26 +1230,24 @@ function WorkoutSession({ category, onExit, onFinish }) {
         <div style={{ fontSize: 12, color: "#6E8296" }}>{idx + 1} / {w.exercises.length}</div>
       </div>
       <Glass style={{ padding: 40, maxWidth: 560, margin: "0 auto", textAlign: "center" }}>
-        <AnimatePresence mode="wait">
-          {phase === "resting" ? (
-            <motion.div key="rest" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>REST</div>
-              <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 64, color: "#79D6FF", margin: "16px 0" }}>{restLeft}s</div>
-              <ProgressBar percent={(1 - restLeft / (ex.rest || 1)) * 100} />
-              <div style={{ marginTop: 24 }}><Button variant="secondary" size="sm" onClick={() => setPhase("exercise")}>Skip rest</Button></div>
-            </motion.div>
-          ) : (
-            <motion.div key={`ex-${idx}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>EXERCISE</div>
-              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 30, color: "#F2F8FC", margin: "10px 0" }}>{ex.name}</div>
-              <div style={{ fontSize: 15, color: "#79D6FF", fontFamily: "'JetBrains Mono',monospace" }}>Set {setsDone + 1} of {ex.sets} · {ex.reps}</div>
-              <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
-                <Button onClick={completeSet} icon={Check}>COMPLETE SET</Button>
-                <Button variant="secondary" onClick={skip} icon={SkipForward}>SKIP</Button>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {phase === "resting" ? (
+          <div key="rest" className="wa-stepfade">
+            <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>REST</div>
+            <div style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, fontSize: 64, color: "#79D6FF", margin: "16px 0" }}>{restLeft}s</div>
+            <ProgressBar percent={(1 - restLeft / (ex.rest || 1)) * 100} />
+            <div style={{ marginTop: 24 }}><Button variant="secondary" size="sm" onClick={() => setPhase("exercise")}>Skip rest</Button></div>
+          </div>
+        ) : (
+          <div key={`ex-${idx}`} className="wa-stepfade">
+            <div style={{ fontSize: 12, letterSpacing: 1.5, color: "#6E8296" }}>EXERCISE</div>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 30, color: "#F2F8FC", margin: "10px 0" }}>{ex.name}</div>
+            <div style={{ fontSize: 15, color: "#79D6FF", fontFamily: "'JetBrains Mono',monospace" }}>Set {setsDone + 1} of {ex.sets} · {ex.reps}</div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center", marginTop: 30, flexWrap: "wrap" }}>
+              <Button onClick={completeSet} icon={Check}>COMPLETE SET</Button>
+              <Button variant="secondary" onClick={skip} icon={SkipForward}>SKIP</Button>
+            </div>
+          </div>
+        )}
       </Glass>
     </div>
   );
@@ -1149,7 +1257,7 @@ function WorkoutSession({ category, onExit, onFinish }) {
    HABITS
 ============================================================================ */
 
-function Habits({ profile, days, today, toggleHabit, addHabit, removeHabit }) {
+function Habits({ profile, days, today, toggleHabit, addHabit }) {
   const [newHabit, setNewHabit] = useState("");
   const last7 = useMemo(() => Array.from({ length: 7 }).map((_, i) => addDays(new Date(), -6 + i)), []);
 
@@ -1208,14 +1316,10 @@ function Habits({ profile, days, today, toggleHabit, addHabit, removeHabit }) {
   );
 }
 
-/* ============================================================================
-   WATER / SLEEP inline within a combined "Vitals" — kept in Dashboard quick actions,
-   full pages accessible via Progress; standalone pages below for completeness.
-============================================================================ */
-
 function WaterBottle({ percent }) {
+  const animated = useAnimatedNumber(percent, 1000);
   const h = 140;
-  const fillH = Math.min(100, Math.max(0, percent)) / 100 * (h - 14);
+  const fillH = Math.min(100, Math.max(0, animated)) / 100 * (h - 14);
   return (
     <svg width="70" height={h + 10} viewBox={`0 0 70 ${h + 10}`}>
       <defs>
@@ -1228,59 +1332,9 @@ function WaterBottle({ percent }) {
       <rect x="26" y="0" width="18" height="12" rx="4" fill="rgba(255,255,255,0.15)" />
       <rect x="14" y="8" width="42" height={h - 8} rx="14" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
       <g clipPath="url(#bottleClip)">
-        <motion.rect x="14" width="42" height={fillH} fill="url(#waterGrad)"
-          initial={{ y: h + 8 }} animate={{ y: h - fillH + 8 }} transition={{ duration: 1, ease: "easeOut" }} />
+        <rect x="14" y={h - fillH + 8} width="42" height={fillH} fill="url(#waterGrad)" />
       </g>
     </svg>
-  );
-}
-
-function SleepLogModal({ initial, sleepTarget, onSave, onClose }) {
-  const [bedtime, setBedtime] = useState(initial?.bedtime || "23:00");
-  const [wake, setWake] = useState(initial?.wake || "07:00");
-  const [quality, setQuality] = useState(initial?.quality || 3);
-
-  const hours = useMemo(() => {
-    const [bh, bm] = bedtime.split(":").map(Number);
-    const [wh, wm] = wake.split(":").map(Number);
-    let mins = (wh * 60 + wm) - (bh * 60 + bm);
-    if (mins <= 0) mins += 24 * 60;
-    return Math.round((mins / 60) * 10) / 10;
-  }, [bedtime, wake]);
-
-  return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-      onClick={onClose}>
-      <motion.div initial={{ scale: 0.94, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
-        <Glass style={{ padding: 28, width: 400, maxWidth: "90vw" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>Log sleep</div>
-            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
-            <div>
-              <div style={qlabel}>Bedtime</div>
-              <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
-            </div>
-            <div>
-              <div style={qlabel}>Wake time</div>
-              <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
-            </div>
-          </div>
-          <div style={{ marginBottom: 18 }}>
-            <div style={qlabel}>Sleep quality: {["Poor", "Rough", "Okay", "Good", "Great"][quality - 1]}</div>
-            <input type="range" min="1" max="5" value={quality} onChange={(e) => setQuality(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
-          </div>
-          <Glass style={{ padding: 14, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12.5, color: "#8FA4B8" }}>Total sleep</span>
-            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, color: "#79D6FF", fontWeight: 700 }}>{hours}h</span>
-          </Glass>
-          <div style={{ fontSize: 11.5, color: "#5C7082", marginBottom: 18, lineHeight: 1.4 }}>Sleep needs vary. Consistency matters more than any single number — target is {sleepTarget}h.</div>
-          <Button onClick={() => onSave({ bedtime, wake, hours, quality })} icon={Check}>Save sleep log</Button>
-        </Glass>
-      </motion.div>
-    </motion.div>
   );
 }
 
@@ -1312,7 +1366,7 @@ function Progress({ days, profile }) {
       <PageHeader title="Progress" subtitle="Consistency across every metric that matters." />
       <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
         {[["week", "THIS WEEK"], ["month", "THIS MONTH"], ["arc", "WINTER ARC"]].map(([id, label]) => (
-          <button key={id} onClick={() => setRange(id)} style={{
+          <button key={id} className="wa-btn" onClick={() => setRange(id)} style={{
             padding: "8px 16px", borderRadius: 10, fontSize: 12, cursor: "pointer",
             background: range === id ? "rgba(127,216,255,0.12)" : "rgba(255,255,255,0.04)",
             border: range === id ? "1px solid rgba(127,216,255,0.4)" : "1px solid rgba(255,255,255,0.08)",
@@ -1323,47 +1377,20 @@ function Progress({ days, profile }) {
 
       <Glass style={{ padding: 22, marginBottom: 16 }}>
         <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>WINTER SCORE TREND</div>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#79D6FF" stopOpacity={0.5} />
-                <stop offset="100%" stopColor="#79D6FF" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-            <XAxis dataKey="label" stroke="#5C7082" fontSize={11} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 8) : 0} />
-            <YAxis stroke="#5C7082" fontSize={11} tickLine={false} axisLine={false} width={28} />
-            <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
-            <Area type="monotone" dataKey="score" stroke="#79D6FF" fill="url(#scoreGrad)" strokeWidth={2} />
-          </AreaChart>
-        </ResponsiveContainer>
+        <MiniAreaChart data={chartData} dataKey="score" color="#79D6FF" height={220} />
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10.5, color: "#5C7082", marginTop: 6 }}>
+          <span>{chartData[0]?.label}</span><span>{chartData[chartData.length - 1]?.label}</span>
+        </div>
       </Glass>
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }} className="wa-progress-grid">
         <Glass style={{ padding: 22 }}>
           <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>HYDRATION (L)</div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={chartData}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-              <XAxis dataKey="label" stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 6) : 0} />
-              <YAxis stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} width={26} />
-              <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
-              <Bar dataKey="water" fill="#5B8CFF" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart data={chartData} dataKey="water" color="#5B8CFF" height={180} />
         </Glass>
         <Glass style={{ padding: 22 }}>
           <div style={{ fontSize: 12, color: "#6E8296", marginBottom: 14 }}>SLEEP (HOURS)</div>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={chartData}>
-              <CartesianGrid stroke="rgba(255,255,255,0.06)" vertical={false} />
-              <XAxis dataKey="label" stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} interval={rangeDays > 14 ? Math.floor(rangeDays / 6) : 0} />
-              <YAxis stroke="#5C7082" fontSize={10} tickLine={false} axisLine={false} width={26} />
-              <Tooltip contentStyle={{ background: "#0B0E12", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, fontSize: 12 }} />
-              <Bar dataKey="sleep" fill="#8FE1FF" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <MiniBarChart data={chartData} dataKey="sleep" color="#8FE1FF" height={180} />
         </Glass>
       </div>
     </div>
@@ -1374,7 +1401,7 @@ function Progress({ days, profile }) {
    CALENDAR
 ============================================================================ */
 
-function CalendarPage({ days, profile, arcStartDate }) {
+function CalendarPage({ days, profile }) {
   const [monthOffset, setMonthOffset] = useState(0);
   const [selected, setSelected] = useState(null);
   const base = new Date(); base.setMonth(base.getMonth() + monthOffset); base.setDate(1);
@@ -1399,9 +1426,9 @@ function CalendarPage({ days, profile, arcStartDate }) {
       <PageHeader title="Calendar" subtitle="Every day of your arc, at a glance." />
       <Glass style={{ padding: 24 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
-          <button onClick={() => setMonthOffset((m) => m - 1)} style={navBtn}><ChevronLeft size={16} /></button>
+          <button className="wa-btn" onClick={() => setMonthOffset((m) => m - 1)} style={navBtn}><ChevronLeft size={16} /></button>
           <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 16, color: "#EAF4FB" }}>{base.toLocaleDateString(undefined, { month: "long", year: "numeric" })}</div>
-          <button onClick={() => setMonthOffset((m) => m + 1)} style={navBtn}><ChevronRight size={16} /></button>
+          <button className="wa-btn" onClick={() => setMonthOffset((m) => m + 1)} style={navBtn}><ChevronRight size={16} /></button>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 6, marginBottom: 8 }}>
           {["S", "M", "T", "W", "T", "F", "S"].map((d, i) => <div key={i} style={{ textAlign: "center", fontSize: 10.5, color: "#5C7082" }}>{d}</div>)}
@@ -1432,9 +1459,7 @@ function CalendarPage({ days, profile, arcStartDate }) {
         </div>
       </Glass>
 
-      <AnimatePresence>
-        {selected && <DayDetailModal date={selected} day={days[dateKey(selected)]} profile={profile} onClose={() => setSelected(null)} />}
-      </AnimatePresence>
+      {selected && <DayDetailModal date={selected} day={days[dateKey(selected)]} profile={profile} onClose={() => setSelected(null)} />}
     </div>
   );
 }
@@ -1445,10 +1470,8 @@ function DayDetailModal({ date, day, profile, onClose }) {
   const d = day || emptyDay();
   const score = computeDayScore(d, profile);
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
-      onClick={onClose}>
-      <motion.div initial={{ scale: 0.94, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, opacity: 0 }} onClick={(e) => e.stopPropagation()}>
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
         <Glass style={{ padding: 28, width: 420, maxWidth: "90vw", maxHeight: "80vh", overflow: "auto" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
             <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>{date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
@@ -1466,8 +1489,8 @@ function DayDetailModal({ date, day, profile, onClose }) {
             {d.journal?.notes && <DetailRow icon={BookOpen} label="Journal" value={d.journal.notes} />}
           </div>
         </Glass>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
 
@@ -1505,7 +1528,7 @@ function Achievements({ derived, xp, level }) {
         {ACHIEVEMENT_DEFS.map((a) => {
           const unlocked = a.check(derived);
           return (
-            <motion.div key={a.id} whileHover={{ y: -3 }}>
+            <div key={a.id} className="wa-hoverlift">
               <Glass style={{ padding: 22, opacity: unlocked ? 1 : 0.55, height: "100%" }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, background: unlocked ? "linear-gradient(135deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {unlocked ? <Trophy size={19} color="#04121F" /> : <Lock size={16} color="#5C7082" />}
@@ -1513,7 +1536,7 @@ function Achievements({ derived, xp, level }) {
                 <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14.5, color: "#EAF4FB", marginTop: 14, letterSpacing: 0.4 }}>{a.name}</div>
                 <div style={{ fontSize: 12.5, color: "#8FA4B8", marginTop: 6 }}>{a.desc}</div>
               </Glass>
-            </motion.div>
+            </div>
           );
         })}
       </div>
@@ -1596,8 +1619,7 @@ function EmptyState({ icon: Icon, text }) {
 }
 
 /* ============================================================================
-   CHALLENGES (part of Progress area, shown within Habits/Progress nav via link) -
-   surfaced as its own section on the Progress page bottom for simplicity.
+   CHALLENGES
 ============================================================================ */
 
 function Challenges({ joined, toggleChallenge }) {
@@ -1703,7 +1725,7 @@ function ToggleRow({ label, checked, onChange }) {
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0" }}>
       <span style={{ fontSize: 13.5, color: "#C7D8E5" }}>{label}</span>
       <button onClick={() => onChange(!checked)} style={{ width: 42, height: 24, borderRadius: 99, background: checked ? "linear-gradient(90deg,#79D6FF,#5B8CFF)" : "rgba(255,255,255,0.1)", border: "none", cursor: "pointer", position: "relative", transition: "background .2s" }}>
-        <motion.div animate={{ x: checked ? 20 : 2 }} transition={{ duration: 0.2 }} style={{ width: 18, height: 18, borderRadius: 99, background: "#fff", position: "absolute", top: 3 }} />
+        <div style={{ width: 18, height: 18, borderRadius: 99, background: "#fff", position: "absolute", top: 3, left: checked ? 20 : 2, transition: "left .2s" }} />
       </button>
     </div>
   );
@@ -1714,6 +1736,57 @@ function PageHeader({ title, subtitle }) {
     <div style={{ marginBottom: 22, paddingTop: 14 }}>
       <h1 style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 26, color: "#F2F8FC", margin: 0 }}>{title}</h1>
       {subtitle && <p style={{ fontSize: 13.5, color: "#8FA4B8", marginTop: 6 }}>{subtitle}</p>}
+    </div>
+  );
+}
+
+/* ============================================================================
+   SLEEP LOG MODAL
+============================================================================ */
+
+function SleepLogModal({ initial, sleepTarget, onSave, onClose }) {
+  const [bedtime, setBedtime] = useState(initial?.bedtime || "23:00");
+  const [wake, setWake] = useState(initial?.wake || "07:00");
+  const [quality, setQuality] = useState(initial?.quality || 3);
+
+  const hours = useMemo(() => {
+    const [bh, bm] = bedtime.split(":").map(Number);
+    const [wh, wm] = wake.split(":").map(Number);
+    let mins = (wh * 60 + wm) - (bh * 60 + bm);
+    if (mins <= 0) mins += 24 * 60;
+    return Math.round((mins / 60) * 10) / 10;
+  }, [bedtime, wake]);
+
+  return (
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "rgba(3,5,8,0.7)", backdropFilter: "blur(4px)", zIndex: 150, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }} onClick={onClose}>
+      <div className="wa-modalcard" onClick={(e) => e.stopPropagation()}>
+        <Glass style={{ padding: 28, width: 400, maxWidth: "90vw" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+            <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 17, color: "#EAF4FB" }}>Log sleep</div>
+            <button onClick={onClose} style={{ background: "none", border: "none", color: "#6E8296", cursor: "pointer" }}><X size={18} /></button>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 18 }}>
+            <div>
+              <div style={qlabel}>Bedtime</div>
+              <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
+            </div>
+            <div>
+              <div style={qlabel}>Wake time</div>
+              <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ ...qinput, padding: "10px 12px" }} />
+            </div>
+          </div>
+          <div style={{ marginBottom: 18 }}>
+            <div style={qlabel}>Sleep quality: {["Poor", "Rough", "Okay", "Good", "Great"][quality - 1]}</div>
+            <input type="range" min="1" max="5" value={quality} onChange={(e) => setQuality(Number(e.target.value))} style={{ width: "100%", accentColor: "#79D6FF" }} />
+          </div>
+          <Glass style={{ padding: 14, marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontSize: 12.5, color: "#8FA4B8" }}>Total sleep</span>
+            <span style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 16, color: "#79D6FF", fontWeight: 700 }}>{hours}h</span>
+          </Glass>
+          <div style={{ fontSize: 11.5, color: "#5C7082", marginBottom: 18, lineHeight: 1.4 }}>Sleep needs vary. Consistency matters more than any single number — target is {sleepTarget}h.</div>
+          <Button onClick={() => onSave({ bedtime, wake, hours, quality })} icon={Check}>Save sleep log</Button>
+        </Glass>
+      </div>
     </div>
   );
 }
@@ -1737,8 +1810,7 @@ function FocusMode({ onExit, today, dayIndex }) {
   const ss = pad(seconds % 60);
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-      style={{ position: "fixed", inset: 0, background: "#04060A", zIndex: 500, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+    <div className="wa-overlay" style={{ position: "fixed", inset: 0, background: "#04060A", zIndex: 500, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
       <SnowField count={24} />
       <button onClick={onExit} style={{ position: "absolute", top: 26, right: 26, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 10, width: 38, height: 38, color: "#9FB4C6", cursor: "pointer", zIndex: 2 }}><X size={17} /></button>
       <div style={{ position: "relative", zIndex: 1, textAlign: "center" }}>
@@ -1751,7 +1823,7 @@ function FocusMode({ onExit, today, dayIndex }) {
         </div>
         <div style={{ marginTop: 60, fontSize: 15, color: "#5C7082", fontStyle: "italic" }}>"{quote}"</div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -1759,9 +1831,9 @@ function FocusMode({ onExit, today, dayIndex }) {
    ROOT APP
 ============================================================================ */
 
-export default function WinterArcApp() {
+function WinterArcApp() {
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState("landing"); // landing | onboarding | app
+  const [view, setView] = useState("landing");
   const [page, setPage] = useState("dashboard");
   const [focusMode, setFocusMode] = useState(false);
   const [toast, setToast] = useState(null);
@@ -1776,36 +1848,29 @@ export default function WinterArcApp() {
   const [challenges, setChallenges] = useState([]);
   const [sleepModalOpen, setSleepModalOpen] = useState(false);
 
-  // Load persisted state
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await window.storage.get(STORAGE_KEY, false);
-        if (res && res.value) {
-          const parsed = JSON.parse(res.value);
-          setProfile(parsed.profile || null);
-          setDays(parsed.days || {});
-          setArcStartDate(parsed.arcStartDate || null);
-          setBestStreakStored(parsed.bestStreak || 0);
-          setChallenges(parsed.challenges || []);
-          setSoundOn(parsed.soundOn ?? true);
-          setNotifOn(parsed.notifOn ?? true);
-          if (parsed.profile) setView("app");
-        }
-      } catch (e) {
-        // no saved state yet
-      } finally {
-        setLoading(false);
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.profile) { setProfile(parsed.profile); setView("app"); }
+        setDays(parsed.days || {});
+        setArcStartDate(parsed.arcStartDate || null);
+        setBestStreakStored(parsed.bestStreak || 0);
+        setChallenges(parsed.challenges || []);
+        setSoundOn(parsed.soundOn ?? true);
+        setNotifOn(parsed.notifOn ?? true);
       }
-    })();
+    } catch (e) {}
+    setLoading(false);
   }, []);
 
-  const persist = useCallback((patch) => {
-    const payload = { profile, days, arcStartDate, bestStreak: bestStreakStored, challenges, soundOn, notifOn, ...patch };
-    window.storage.set(STORAGE_KEY, JSON.stringify(payload), false).catch(() => {});
-  }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn]);
-
-  useEffect(() => { if (!loading && profile) persist({}); }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn]); // eslint-disable-line
+  useEffect(() => {
+    if (loading || !profile) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ profile, days, arcStartDate, bestStreak: bestStreakStored, challenges, soundOn, notifOn }));
+    } catch (e) {}
+  }, [profile, days, arcStartDate, bestStreakStored, challenges, soundOn, notifOn, loading]);
 
   const today = days[todayKey()] || emptyDay();
   const dayIndex = arcStartDate ? daysBetween(new Date(arcStartDate), new Date()) + 1 : 1;
@@ -1883,19 +1948,15 @@ export default function WinterArcApp() {
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#05070A", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <style>{FONT_STYLES}</style>
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1.6, repeat: Infinity, ease: "linear" }}>
+        <div style={{ animation: "wa-spin 1.6s linear infinite" }}>
           <Snowflake size={26} color="#79D6FF" />
-        </motion.div>
+        </div>
       </div>
     );
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "#05070A", color: "#EAF4FB", fontFamily: "'Inter',sans-serif", position: "relative" }}>
-      <style>{FONT_STYLES}</style>
-      <GlobalStyles />
-
       {view === "landing" && (
         <Landing onStart={() => setView("onboarding")} onExplore={() => exploreRef.current?.scrollIntoView({ behavior: "smooth" })} exploreRef={exploreRef} />
       )}
@@ -1906,79 +1967,54 @@ export default function WinterArcApp() {
 
       {view === "app" && profile && (
         <div style={{ display: "flex" }}>
-          <Sidebar page={page} setPage={setPage} profile={profile} streak={streak} focusMode={focusMode} setFocusMode={setFocusMode} />
+          <Sidebar page={page} setPage={setPage} profile={profile} streak={streak} setFocusMode={setFocusMode} />
           <div style={{ flex: 1, minWidth: 0, position: "relative" }}>
             <SnowField count={16} />
             <div style={{ position: "relative", zIndex: 1 }}>
               <Topbar profile={profile} dayIndex={dayIndex} soundOn={soundOn} setSoundOn={setSoundOn} />
-              <AnimatePresence mode="wait">
-                <motion.div key={page} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
-                  {page === "dashboard" && (
-                    <Dashboard state={{ days, profile }} profile={profile} today={today} dayIndex={dayIndex} streak={streak} bestStreak={bestStreak} score={score} updateToday={updateToday} setPage={setPage} onLogSleep={() => setSleepModalOpen(true)} />
-                  )}
-                  {page === "workouts" && <Workouts profile={profile} today={today} updateToday={updateToday} completeWorkout={completeWorkout} />}
-                  {page === "habits" && <Habits profile={profile} days={days} today={today} toggleHabit={toggleHabit} addHabit={addHabit} />}
-                  {page === "progress" && (
-                    <>
-                      <Progress days={days} profile={profile} />
-                      <div style={pagewrap}><Challenges joined={challenges} toggleChallenge={toggleChallenge} /></div>
-                    </>
-                  )}
-                  {page === "calendar" && <CalendarPage days={days} profile={profile} arcStartDate={arcStartDate} />}
-                  {page === "achievements" && <Achievements derived={derived} xp={xp} level={level} />}
-                  {page === "journal" && <Journal days={days} saveJournal={saveJournal} />}
-                  {page === "settings" && (
-                    <Settings profile={profile} updateProfile={setProfile} exportData={exportData} resetArc={resetArc} soundOn={soundOn} setSoundOn={setSoundOn} notifOn={notifOn} setNotifOn={setNotifOn} />
-                  )}
-                </motion.div>
-              </AnimatePresence>
+              <div key={page} className="wa-stepfade">
+                {page === "dashboard" && (
+                  <Dashboard profile={profile} today={today} dayIndex={dayIndex} streak={streak} bestStreak={bestStreak} score={score} updateToday={updateToday} setPage={setPage} onLogSleep={() => setSleepModalOpen(true)} />
+                )}
+                {page === "workouts" && <Workouts profile={profile} today={today} completeWorkout={completeWorkout} />}
+                {page === "habits" && <Habits profile={profile} days={days} today={today} toggleHabit={toggleHabit} addHabit={addHabit} />}
+                {page === "progress" && (
+                  <>
+                    <Progress days={days} profile={profile} />
+                    <div style={pagewrap}><Challenges joined={challenges} toggleChallenge={toggleChallenge} /></div>
+                  </>
+                )}
+                {page === "calendar" && <CalendarPage days={days} profile={profile} />}
+                {page === "achievements" && <Achievements derived={derived} xp={xp} level={level} />}
+                {page === "journal" && <Journal days={days} saveJournal={saveJournal} />}
+                {page === "settings" && (
+                  <Settings profile={profile} updateProfile={setProfile} exportData={exportData} resetArc={resetArc} soundOn={soundOn} setSoundOn={setSoundOn} notifOn={notifOn} setNotifOn={setNotifOn} />
+                )}
+              </div>
             </div>
           </div>
           <MobileNav page={page} setPage={setPage} />
         </div>
       )}
 
-      <AnimatePresence>
-        {focusMode && <FocusMode onExit={() => setFocusMode(false)} today={today} dayIndex={dayIndex} />}
-      </AnimatePresence>
+      {focusMode && <FocusMode onExit={() => setFocusMode(false)} today={today} dayIndex={dayIndex} />}
 
-      <AnimatePresence>
-        {sleepModalOpen && (
-          <SleepLogModal
-            initial={today.sleep}
-            sleepTarget={profile?.sleepTarget || 8}
-            onClose={() => setSleepModalOpen(false)}
-            onSave={(sleep) => { updateToday({ sleep }); setSleepModalOpen(false); showToast("Sleep logged"); }}
-          />
-        )}
-      </AnimatePresence>
+      {sleepModalOpen && (
+        <SleepLogModal
+          initial={today.sleep}
+          sleepTarget={profile?.sleepTarget || 8}
+          onClose={() => setSleepModalOpen(false)}
+          onSave={(sleep) => { updateToday({ sleep }); setSleepModalOpen(false); showToast("Sleep logged"); }}
+        />
+      )}
 
       <Toast toast={toast} />
     </div>
   );
 }
 
-function GlobalStyles() {
-  return (
-    <style>{`
-      * { box-sizing: border-box; }
-      body { margin: 0; }
-      ::-webkit-scrollbar { width: 8px; height: 8px; }
-      ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 8px; }
-      input:focus, textarea:focus, button:focus-visible {
-        outline: 2px solid #79D6FF; outline-offset: 2px;
-      }
-      @media (max-width: 900px) {
-        .wa-sidebar { display: none !important; }
-        .wa-mobilenav { display: block !important; }
-        .wa-dash-top, .wa-dash-grid, .wa-workout-grid, .wa-progress-grid, .wa-ach-grid, .wa-journal-grid, .wa-settings-grid, .wa-challenge-grid {
-          grid-template-columns: 1fr !important;
-        }
-        .wa-daylabel { display: block !important; }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
-      }
-    `}</style>
-  );
-}
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<WinterArcApp />);
+</script>
+</body>
+</html>
